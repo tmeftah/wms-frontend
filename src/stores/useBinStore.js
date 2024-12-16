@@ -78,13 +78,13 @@ export const useBinStore = defineStore("bin", () => {
     }
   };
 
-  const removeBinFromShelf = (shelfName, bin) => {
-    if (binShelves.value[shelfName]) {
-      binShelves.value[shelfName] = binShelves.value[shelfName].filter(
-        (b) => b.name !== bin.name
+  const removeBinFromShelf = (selectedShelf, selectedBin) => {
+    if (selectedBin && selectedShelf) {
+      binShelves.value[selectedShelf] = binShelves.value[selectedShelf].filter(
+        (bin) => bin !== selectedBin
       );
-      saveState(); // Save new state
     }
+    saveState();
   };
 
   // Load state when the store initializes
