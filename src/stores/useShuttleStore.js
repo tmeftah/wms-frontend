@@ -1,6 +1,6 @@
 import { defineStore } from "pinia";
 import { ref } from "vue";
-import { useBinStore } from "./useBinStore"; // Import the bin store to manage related bins
+import { useBinStore } from "./useBinStore";
 
 export const useShuttleStore = defineStore("shuttle", () => {
   const simple = ref([]);
@@ -30,9 +30,27 @@ export const useShuttleStore = defineStore("shuttle", () => {
     );
   };
 
+  const getNextShuttleNumber = () => {
+    const numbers = simple.value
+      .map((shuttle) => parseInt(shuttle.label.split(" ")[1], 10))
+      .sort((a, b) => a - b);
+
+    let nextNumber = 1;
+    for (let i = 0; i < numbers.length; i++) {
+      if (numbers[i] !== nextNumber) {
+        break;
+      }
+      nextNumber++;
+    }
+    return nextNumber;
+  };
+
   const addShuttle = () => {
-    const shuttleCount = simple.value.length + 1;
-    const newShuttleLabel = `Shuttle ${String(shuttleCount).padStart(3, "0")}`;
+    const nextShuttleNumber = getNextShuttleNumber();
+    const newShuttleLabel = `Shuttle ${String(nextShuttleNumber).padStart(
+      3,
+      "0"
+    )}`;
 
     simple.value.push({
       label: newShuttleLabel,
@@ -98,7 +116,7 @@ export const useShuttleStore = defineStore("shuttle", () => {
   };
 
   const removeShuttle = (shuttleName) => {
-    const binStore = useBinStore(); // Access the bin store
+    const binStore = useBinStore();
     simple.value = simple.value.filter(
       (shuttle) => shuttle.label !== shuttleName
     );
@@ -120,11 +138,11 @@ export const useShuttleStore = defineStore("shuttle", () => {
     });
 
     saveState();
-    binStore.saveState(); // Save bin store changes
+    binStore.saveState();
   };
 
   const removeShelf = (shelfName) => {
-    const binStore = useBinStore(); // Access the bin store
+    const binStore = useBinStore();
 
     // Remove the shelf
     shelfDetails.value = shelfDetails.value.filter(
@@ -142,7 +160,7 @@ export const useShuttleStore = defineStore("shuttle", () => {
     delete binStore.binShelves[shelfName];
 
     saveState();
-    binStore.saveState(); // Save bin store changes
+    binStore.saveState();
   };
 
   const getShelfWidth = (shelf) => {
