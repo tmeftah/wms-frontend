@@ -91,6 +91,14 @@
                 color="primary"
                 class="q-mb-md"
               />
+              <!-- Delete button for each shelf -->
+              <q-btn
+                @click="shuttleStore.removeShelf(shelf.name)"
+                label="Remove Shelf"
+                color="negative"
+                outlined
+                class="q-mb-md"
+              />
               <!-- SVG representing the shelf and bins -->
               <div class="shelf-container">
                 <svg viewBox="0 0 100 100" preserveAspectRatio="none">
@@ -233,9 +241,7 @@ export default {
 
     const removeSelectedBin = () => {
       if (selectedBin.value && selectedShelf.value) {
-        binStore.binShelves[selectedShelf.value] = binStore.binShelves[
-          selectedShelf.value
-        ].filter((bin) => bin !== selectedBin.value);
+        binStore.removeBinFromShelf(selectedShelf.value, selectedBin.value);
         selectedBin.value = null;
         selectedShelf.value = null;
       }
@@ -247,7 +253,6 @@ export default {
       }
     };
 
-    // Add and remove event listeners for keydown
     onMounted(() => {
       window.addEventListener("keydown", handleKeyDown);
     });

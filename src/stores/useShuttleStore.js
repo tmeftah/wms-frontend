@@ -106,13 +106,13 @@ export const useShuttleStore = defineStore("shuttle", () => {
       (shuttle) => shuttle.name !== shuttleName
     );
 
-    // Remove all shelves associated with this shuttle
+    // Remove all shelves and their bins associated with this shuttle
     shelfDetails.value = shelfDetails.value.filter(
       (shelf) => !shelf.name.startsWith(shuttleName)
     );
     delete shelfCounters.value[shuttleName];
 
-    // Remove all bins from the removed shelves
+    // Delete associated bins
     Object.keys(binStore.binShelves).forEach((shelfName) => {
       if (shelfName.startsWith(shuttleName)) {
         delete binStore.binShelves[shelfName];
@@ -124,19 +124,25 @@ export const useShuttleStore = defineStore("shuttle", () => {
   };
 
   const removeShelf = (shelfName) => {
-    const [shuttleName] = shelfName.split(" - Shelve");
-    const shuttle = simple.value.find(
-      (sh) => sh.label.trim() === shuttleName.trim()
-    );
-    if (shuttle) {
-      shuttle.children = shuttle.children.filter(
-        (child) => child.label.trim() !== shelfName.trim()
-      );
-    }
+    const binStore = useBinStore(); // Access the bin store
+
+    // Remove the shelf
     shelfDetails.value = shelfDetails.value.filter(
-      (shelf) => shelf.name.trim() !== shelfName.trim()
+      (shelf) => shelf.name !== shelfName
     );
+
+    // Remove the shelf from the simple structure
+    simple.value.forEach((shuttle) => {
+      shuttle.children = shuttle.children.filter(
+        (child) => child.label !== shelfName
+      );
+    });
+
+    // Delete associated bins
+    delete binStore.binShelves[shelfName];
+
     saveState();
+    binStore.saveState(); // Save bin store changes
   };
 
   const getShelfWidth = (shelf) => {
