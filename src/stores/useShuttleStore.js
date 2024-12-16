@@ -1,5 +1,6 @@
 import { defineStore } from "pinia";
-import { ref, watch } from "vue";
+import { ref } from "vue";
+import { useBinStore } from "./useBinStore"; // Import the bin store to manage related bins
 
 export const useShuttleStore = defineStore("shuttle", () => {
   const simple = ref([]);
@@ -7,7 +8,6 @@ export const useShuttleStore = defineStore("shuttle", () => {
   const shelfDetails = ref([]);
   const shelfCounters = ref({});
 
-  // Function to load state from localStorage
   const loadState = () => {
     if (localStorage.getItem("shuttleStore")) {
       const savedState = JSON.parse(localStorage.getItem("shuttleStore"));
@@ -18,7 +18,6 @@ export const useShuttleStore = defineStore("shuttle", () => {
     }
   };
 
-  // Function to save state to localStorage
   const saveState = () => {
     localStorage.setItem(
       "shuttleStore",
@@ -49,7 +48,7 @@ export const useShuttleStore = defineStore("shuttle", () => {
     });
 
     shelfCounters.value[newShuttleLabel] = 1;
-    saveState(); // Save new state
+    saveState();
   };
 
   const addShelfToSelectedShuttle = (selectedShuttle) => {
@@ -74,7 +73,7 @@ export const useShuttleStore = defineStore("shuttle", () => {
     });
 
     shelfCounters.value[selectedShuttle] += 1;
-    saveState(); // Save new state
+    saveState();
   };
 
   const updateShuttleName = (oldName, newName) => {
@@ -94,22 +93,34 @@ export const useShuttleStore = defineStore("shuttle", () => {
           shelf.title = `New ${child.label}`;
         }
       });
-      saveState(); // Save new state
+      saveState();
     }
   };
 
   const removeShuttle = (shuttleName) => {
+    const binStore = useBinStore(); // Access the bin store
     simple.value = simple.value.filter(
       (shuttle) => shuttle.label !== shuttleName
     );
     shuttleDetails.value = shuttleDetails.value.filter(
       (shuttle) => shuttle.name !== shuttleName
     );
+
+    // Remove all shelves associated with this shuttle
     shelfDetails.value = shelfDetails.value.filter(
       (shelf) => !shelf.name.startsWith(shuttleName)
     );
     delete shelfCounters.value[shuttleName];
-    saveState(); // Save new state
+
+    // Remove all bins from the removed shelves
+    Object.keys(binStore.binShelves).forEach((shelfName) => {
+      if (shelfName.startsWith(shuttleName)) {
+        delete binStore.binShelves[shelfName];
+      }
+    });
+
+    saveState();
+    binStore.saveState(); // Save bin store changes
   };
 
   const removeShelf = (shelfName) => {
@@ -125,7 +136,7 @@ export const useShuttleStore = defineStore("shuttle", () => {
     shelfDetails.value = shelfDetails.value.filter(
       (shelf) => shelf.name.trim() !== shelfName.trim()
     );
-    saveState(); // Save new state
+    saveState();
   };
 
   const getShelfWidth = (shelf) => {
@@ -142,7 +153,6 @@ export const useShuttleStore = defineStore("shuttle", () => {
     return shuttle ? shuttle.depth : 100;
   };
 
-  // Load state when the store initializes
   loadState();
 
   return {
