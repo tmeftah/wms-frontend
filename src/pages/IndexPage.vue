@@ -83,7 +83,7 @@
             :key="shelf.name"
             :name="shelf.name"
           >
-            <div class="q-gutter-md q-mb-md">
+            <div class="display: flex; flex-direction: column;">
               <div class="text-h4">{{ shelf.title }}</div>
               <q-btn
                 @click="showBinSelector(shelf.name)"
