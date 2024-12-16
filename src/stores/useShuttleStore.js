@@ -138,7 +138,6 @@ export const useShuttleStore = defineStore("shuttle", () => {
     });
 
     saveState();
-    binStore.saveState();
   };
 
   const removeShelf = (shelfName) => {
@@ -160,7 +159,6 @@ export const useShuttleStore = defineStore("shuttle", () => {
     delete binStore.binShelves[shelfName];
 
     saveState();
-    binStore.saveState();
   };
 
   const getShelfWidth = (shelf) => {

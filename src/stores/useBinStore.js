@@ -1,5 +1,6 @@
 import { defineStore } from "pinia";
 import { ref } from "vue";
+import { useShuttleStore } from "./useShuttleStore"; // Import the shuttle store
 
 export const useBinStore = defineStore("bin", () => {
   const bins = ref([]);
@@ -31,25 +32,31 @@ export const useBinStore = defineStore("bin", () => {
   };
 
   const addBinToShelf = (shelfName, bin) => {
+    const shuttleStore = useShuttleStore(); // Get the shuttle store
+    const shuttleWidth = shuttleStore.getShelfWidth({ name: shelfName });
+    const shuttleDepth = shuttleStore.getShelfDepth({ name: shelfName });
+
     if (!binShelves.value[shelfName]) {
       binShelves.value[shelfName] = [];
     }
     const shelfBins = binShelves.value[shelfName];
 
     // Determine position for the bin on the shelf
-    const shelfWidth = 100; // Replace with actual shelf width
-    const shelfDepth = 50; // Replace with actual shelf depth
     let position = { x: 0, y: 0 };
     let placed = false;
 
     const canFit = (binToPlace, posX, posY) =>
-      posX + binToPlace.width <= shelfWidth &&
-      posY + binToPlace.depth <= shelfDepth;
+      posX + binToPlace.width <= shuttleWidth &&
+      posY + binToPlace.depth <= shuttleDepth;
 
-    for (let possibleY = 0; !placed && possibleY + bin.depth <= shelfDepth; ) {
+    for (
+      let possibleY = 0;
+      !placed && possibleY + bin.depth <= shuttleDepth;
+
+    ) {
       for (
         let possibleX = 0;
-        !placed && possibleX + bin.width <= shelfWidth;
+        !placed && possibleX + bin.width <= shuttleWidth;
 
       ) {
         if (
