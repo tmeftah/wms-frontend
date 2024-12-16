@@ -1,48 +1,35 @@
-// src/stores/useShuttleStore.js
 import { defineStore } from "pinia";
-import { ref } from "vue";
+import { ref, watch } from "vue";
 
 export const useShuttleStore = defineStore("shuttle", () => {
-  const simple = ref([
-    {
-      label: "Shuttle 001",
-      children: [
-        { label: "Shuttle 001 - Shelve 001", icon: "view_module" },
-        { label: "Shuttle 001 - Shelve 002", icon: "view_module" },
-        { label: "Shuttle 001 - Shelve 003", icon: "view_module" },
-      ],
-    },
-  ]);
+  const simple = ref([]);
+  const shuttleDetails = ref([]);
+  const shelfDetails = ref([]);
+  const shelfCounters = ref({});
 
-  const shuttleDetails = ref([
-    {
-      name: "Shuttle 001",
-      editName: "Shuttle 001",
-      title: "Shuttle 001 Setup",
-      width: 200, // example width
-      depth: 300, // example depth (serves as height)
-    },
-  ]);
+  // Function to load state from localStorage
+  const loadState = () => {
+    if (localStorage.getItem("shuttleStore")) {
+      const savedState = JSON.parse(localStorage.getItem("shuttleStore"));
+      simple.value = savedState.simple || [];
+      shuttleDetails.value = savedState.shuttleDetails || [];
+      shelfDetails.value = savedState.shelfDetails || [];
+      shelfCounters.value = savedState.shelfCounters || {};
+    }
+  };
 
-  const shelfDetails = ref([
-    {
-      name: "Shuttle 001 - Shelve 001",
-      title: "Welcome",
-      content: ["Lorem ipsum dolor sit.", "Another lorem ipsum paragraph."],
-    },
-    {
-      name: "Shuttle 001 - Shelve 002",
-      title: "Food",
-      content: ["Lorem ipsum dolor sit.", "Another lorem ipsum paragraph."],
-    },
-    {
-      name: "Shuttle 001 - Shelve 003",
-      title: "Room view",
-      content: ["Lorem ipsum dolor sit.", "Another lorem ipsum paragraph."],
-    },
-  ]);
-
-  const shelfCounters = ref({ "Shuttle 001": 4 });
+  // Function to save state to localStorage
+  const saveState = () => {
+    localStorage.setItem(
+      "shuttleStore",
+      JSON.stringify({
+        simple: simple.value,
+        shuttleDetails: shuttleDetails.value,
+        shelfDetails: shelfDetails.value,
+        shelfCounters: shelfCounters.value,
+      })
+    );
+  };
 
   const addShuttle = () => {
     const shuttleCount = simple.value.length + 1;
@@ -62,6 +49,7 @@ export const useShuttleStore = defineStore("shuttle", () => {
     });
 
     shelfCounters.value[newShuttleLabel] = 1;
+    saveState(); // Save new state
   };
 
   const addShelfToSelectedShuttle = (selectedShuttle) => {
@@ -86,6 +74,7 @@ export const useShuttleStore = defineStore("shuttle", () => {
     });
 
     shelfCounters.value[selectedShuttle] += 1;
+    saveState(); // Save new state
   };
 
   const updateShuttleName = (oldName, newName) => {
@@ -105,6 +94,7 @@ export const useShuttleStore = defineStore("shuttle", () => {
           shelf.title = `New ${child.label}`;
         }
       });
+      saveState(); // Save new state
     }
   };
 
@@ -119,11 +109,11 @@ export const useShuttleStore = defineStore("shuttle", () => {
       (shelf) => !shelf.name.startsWith(shuttleName)
     );
     delete shelfCounters.value[shuttleName];
+    saveState(); // Save new state
   };
 
   const removeShelf = (shelfName) => {
     const [shuttleName] = shelfName.split(" - Shelve");
-
     const shuttle = simple.value.find(
       (sh) => sh.label.trim() === shuttleName.trim()
     );
@@ -132,10 +122,10 @@ export const useShuttleStore = defineStore("shuttle", () => {
         (child) => child.label.trim() !== shelfName.trim()
       );
     }
-
     shelfDetails.value = shelfDetails.value.filter(
       (shelf) => shelf.name.trim() !== shelfName.trim()
     );
+    saveState(); // Save new state
   };
 
   const getShelfWidth = (shelf) => {
@@ -151,6 +141,9 @@ export const useShuttleStore = defineStore("shuttle", () => {
     );
     return shuttle ? shuttle.depth : 100;
   };
+
+  // Load state when the store initializes
+  loadState();
 
   return {
     simple,

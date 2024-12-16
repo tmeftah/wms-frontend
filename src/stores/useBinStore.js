@@ -1,4 +1,3 @@
-// src/stores/useBinStore.js
 import { defineStore } from "pinia";
 import { ref } from "vue";
 
@@ -6,8 +5,29 @@ export const useBinStore = defineStore("bin", () => {
   const bins = ref([]);
   const binShelves = ref({});
 
+  // Function to load state from localStorage
+  const loadState = () => {
+    if (localStorage.getItem("binStore")) {
+      const savedState = JSON.parse(localStorage.getItem("binStore"));
+      bins.value = savedState.bins || [];
+      binShelves.value = savedState.binShelves || {};
+    }
+  };
+
+  // Function to save state to localStorage
+  const saveState = () => {
+    localStorage.setItem(
+      "binStore",
+      JSON.stringify({
+        bins: bins.value,
+        binShelves: binShelves.value,
+      })
+    );
+  };
+
   const addBin = (bin) => {
     bins.value.push(bin);
+    saveState(); // Save new state
   };
 
   const addBinToShelf = (shelfName, bin) => {
@@ -16,10 +36,9 @@ export const useBinStore = defineStore("bin", () => {
     }
     const shelfBins = binShelves.value[shelfName];
 
-    const shelfWidth = 100; // Placeholder for actual shelf width
-    const shelfDepth = 50; // Placeholder for actual shelf depth
-
-    // Implement a simple bin placement logic
+    // Determine position for the bin on the shelf
+    const shelfWidth = 100; // Replace with actual shelf width
+    const shelfDepth = 50; // Replace with actual shelf depth
     let position = { x: 0, y: 0 };
     let placed = false;
 
@@ -55,13 +74,27 @@ export const useBinStore = defineStore("bin", () => {
     if (placed) {
       // Allow adding the same bin multiple times by not removing the bin from the list
       shelfBins.push({ ...bin, position });
+      saveState(); // Save new state
     }
   };
+
+  const removeBinFromShelf = (shelfName, bin) => {
+    if (binShelves.value[shelfName]) {
+      binShelves.value[shelfName] = binShelves.value[shelfName].filter(
+        (b) => b.name !== bin.name
+      );
+      saveState(); // Save new state
+    }
+  };
+
+  // Load state when the store initializes
+  loadState();
 
   return {
     bins,
     binShelves,
     addBin,
     addBinToShelf,
+    removeBinFromShelf,
   };
 });
