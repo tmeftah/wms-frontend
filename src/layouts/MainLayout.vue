@@ -46,6 +46,18 @@ const linksList = [
     icon: "factory",
     link: "#",
   },
+  {
+    title: "Material",
+    caption: "Material managemnent",
+    icon: "category",
+    link: "#material",
+  },
+  {
+    title: "Order",
+    caption: "Order managemnent",
+    icon: "shopping_cart",
+    link: "#order",
+  },
 ];
 
 export default defineComponent({
