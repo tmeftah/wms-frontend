@@ -87,7 +87,7 @@ export const useShuttleStore = defineStore("shuttle", () => {
     shelfDetails.value.push({
       name: newShelfLabel,
       title: `New ${newShelfLabel}`,
-      content: ["Lorem ipsum dolor sit.", "Another lorem ipsum paragraph."],
+      content: ["20 Bins 20x20", "10 Bins 50x50"],
     });
 
     shelfCounters.value[selectedShuttle] += 1;

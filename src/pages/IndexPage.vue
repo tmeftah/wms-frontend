@@ -1,6 +1,6 @@
 <template>
   <div>
-    <q-splitter v-model="splitterModel" style="height: 400px">
+    <q-splitter v-model="splitterModel">
       <template v-slot:before>
         <div class="q-pa-md">
           <q-btn
@@ -125,7 +125,7 @@
                 </svg>
               </div>
               <p v-for="content in shelf.content" :key="content">
-                {{ content }}
+                <!--{{ content }} -->
               </p>
             </div>
           </q-tab-panel>
@@ -192,7 +192,7 @@ export default {
     const shuttleStore = useShuttleStore();
     const binStore = useBinStore();
 
-    const splitterModel = ref(50);
+    const splitterModel = ref(30); // width
     const selected = ref("Shuttle 001");
     const selectedShuttle = ref("");
     const showBinDialog = ref(false);
@@ -296,8 +296,8 @@ export default {
 }
 /* Styles to ensure the SVG scales responsively */
 .shelf-container {
-  width: 100%;
-  height: 300px; /* You can adjust this height for better UX */
+  width: 350px;
+  height: 250px; /* You can adjust this height for better UX */
   max-width: 100%;
   max-height: 100%;
 }
