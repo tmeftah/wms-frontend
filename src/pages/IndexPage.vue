@@ -114,7 +114,7 @@
                   color="primary"
                   icon="content_copy"
                   label="Duplicate Shelf (with bins)"
-                  @click="duplicateShelfWithBins(shelf.name)"
+                  @click="openDuplicateShelfDialog(shelf.name)"
                 />
 
                 <svg
@@ -326,6 +326,40 @@
         </q-card-actions>
       </q-card>
     </q-dialog>
+
+    <!-- Duplicate Shelf Dialog -->
+    <q-dialog v-model="showDuplicateShelfDialog">
+      <q-card>
+        <q-card-section>
+          <div class="text-h6">
+            Duplicate Shelf:
+            <span class="text-primary">{{ shelfToDuplicate }}</span>
+          </div>
+        </q-card-section>
+        <q-card-section>
+          <q-input
+            v-model.number="duplicateCount"
+            label="Number of Duplicates"
+            type="number"
+            min="1"
+            filled
+          />
+          <q-checkbox
+            v-model="duplicateBins"
+            label="Copy Bins"
+            class="q-mt-md"
+          />
+          <q-checkbox
+            v-model="duplicateDescriptions"
+            label="Copy Bin Descriptions"
+          />
+        </q-card-section>
+        <q-card-actions align="right">
+          <q-btn label="Cancel" color="grey" v-close-popup />
+          <q-btn label="Duplicate" color="primary" @click="runDuplicateShelf" />
+        </q-card-actions>
+      </q-card>
+    </q-dialog>
   </div>
 </template>
 
@@ -341,6 +375,12 @@ export default {
     const $q = useQuasar();
     const shuttleStore = useShuttleStore();
     const binStore = useBinStore();
+
+    const showDuplicateShelfDialog = ref(false);
+    const shelfToDuplicate = ref("");
+    const duplicateCount = ref(1);
+    const duplicateBins = ref(true);
+    const duplicateDescriptions = ref(true);
 
     const splitterModel = ref(30);
     const selected = ref("Shuttle 001");
@@ -435,6 +475,7 @@ export default {
         selectedBins.value = binsInRect;
       }
     }
+
     function onSvgMouseUp(event) {
       isSelecting.value = false;
     }
@@ -553,6 +594,14 @@ export default {
       descriptionInput.value = shelfBins[0].description || "";
     }
 
+    function openDuplicateShelfDialog(shelfName) {
+      shelfToDuplicate.value = shelfName;
+      duplicateCount.value = 1;
+      duplicateBins.value = true;
+      duplicateDescriptions.value = true;
+      showDuplicateShelfDialog.value = true;
+    }
+
     function duplicateShelfWithBins(shelfName) {
       // Find the existing shelf object from shuttleStore
       const sourceShelf = shuttleStore.shelfDetails.find(
@@ -583,6 +632,58 @@ export default {
       });
     }
 
+    function runDuplicateShelf() {
+      const origShelfName = shelfToDuplicate.value;
+      if (!origShelfName || duplicateCount.value < 1) {
+        $q.notify({ color: "negative", message: "Please enter valid values." });
+        return;
+      }
+      const origShelf = shuttleStore.shelfDetails.find(
+        (s) => s.name === origShelfName
+      );
+      if (!origShelf) {
+        $q.notify({ color: "negative", message: "Shelf not found!" });
+        return;
+      }
+      for (let i = 1; i <= duplicateCount.value; i++) {
+        const newShelf = shuttleStore.addShelfToSelectedShuttle(
+          selectedShuttle.value
+        );
+
+        // Duplicate bins if the checkbox is checked
+        if (duplicateBins.value && binStore.binShelves[origShelfName]) {
+          const binsForNewShelf = binStore.binShelves[origShelfName].map(
+            (bin) => {
+              const newBin = { ...JSON.parse(JSON.stringify(bin)) };
+              if (!duplicateDescriptions.value) {
+                newBin.description = "";
+              }
+              return newBin;
+            }
+          );
+          binStore.binShelves[newShelf] = binsForNewShelf;
+          binStore.$patch({ binShelves: { ...binStore.binShelves } });
+          binStore.saveState();
+        } else {
+          // If not duplicating bins, create empty shelf.bins
+          binStore.binShelves[newShelf] = [];
+          binStore.$patch({ binShelves: { ...binStore.binShelves } });
+          binStore.saveState();
+        }
+      }
+      $q.notify({
+        color: "positive",
+        message: `Duplicated ${duplicateCount.value} shelf(es)${
+          duplicateBins.value
+            ? duplicateDescriptions.value
+              ? " with bins and descriptions."
+              : " with bins (no descriptions)."
+            : " (no bins)."
+        }`,
+      });
+      showDuplicateShelfDialog.value = false;
+    }
+
     return {
       splitterModel,
       selected,
@@ -591,6 +692,12 @@ export default {
       binData,
       shuttleStore,
       binStore,
+      shelfToDuplicate,
+      duplicateCount,
+      duplicateBins,
+      duplicateDescriptions,
+      showDuplicateShelfDialog,
+
       getBinFillColor,
       updateSelectedShuttle,
       onShuttleNameChange,
@@ -606,7 +713,8 @@ export default {
       descriptionInput,
       setDescriptionForSelectedBins,
       openBinDescriptionDialogForAll,
-      duplicateShelfWithBins,
+      runDuplicateShelf,
+      openDuplicateShelfDialog,
 
       svgRefs,
       isSelecting,
