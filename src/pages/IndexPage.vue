@@ -174,11 +174,14 @@
                         "
                         :stroke-width="isBinSelected(bin, shelf.name) ? 2 : 0.5"
                         @click.stop="selectBin(shelf.name, bin, $event)"
+                        @mousedown.stop="
+                          onBinMouseDown(shelf.name, bin, $event)
+                        "
                         @contextmenu.prevent.stop="
                           openBinDescriptionDialog(shelf.name, bin, $event)
                         "
                         :title="bin.description || ''"
-                        style="pointer-events: auto"
+                        style="pointer-events: auto; cursor: pointer"
                       />
                     </g>
                     <rect
@@ -200,7 +203,6 @@
             <q-card class="q-mt-lg" flat bordered>
               <q-card-section>
                 <div class="text-h6 q-mb-md">Bins on Shelf</div>
-
                 <q-table
                   dense
                   class="q-mt-sm"
@@ -367,7 +369,7 @@
 </template>
 
 <script>
-import { ref, reactive, onMounted, onBeforeUnmount, computed } from "vue";
+import { ref, reactive, onMounted, onBeforeUnmount } from "vue";
 import { useShuttleStore } from "../stores/useShuttleStore";
 import { useBinStore } from "../stores/useBinStore";
 import { useQuasar } from "quasar";
@@ -428,6 +430,11 @@ export default {
     const isSelecting = ref(false);
     const selectRect = ref({ x1: 0, y1: 0, x2: 0, y2: 0 });
     const currentShelf = ref("");
+
+    // For dragging bins
+    const draggingBin = ref(null); // { bin, shelfName }
+    const dragStart = ref({ x: 0, y: 0 });
+    const binOffset = ref({ x: 0, y: 0 });
 
     function getSvgCoords(event, shelfName) {
       const svg = svgRefs[shelfName];
@@ -512,6 +519,84 @@ export default {
     function onSvgMouseUp() {
       isSelecting.value = false;
     }
+
+    /** -- Drag Bin Handlers -- */
+    function onBinMouseDown(shelfName, bin, event) {
+      if (event.button !== 0) return; // Only left mouse
+      draggingBin.value = { bin, shelfName };
+
+      // Mouse in SVG percent coordinates
+      const coords = getSvgCoords(event, shelfName);
+
+      // Bin top-left in percent
+      const shelfWidth = shuttleStore.getShelfWidth({ name: shelfName });
+      const shelfDepth = shuttleStore.getShelfDepth({ name: shelfName });
+      const binX = (bin.position.x / shelfWidth) * 100;
+      const binY = (bin.position.y / shelfDepth) * 100;
+
+      binOffset.value = {
+        x: coords.x - binX,
+        y: coords.y - binY,
+      };
+
+      dragStart.value = coords;
+
+      document.addEventListener("mousemove", onBinMouseMove);
+      document.addEventListener("mouseup", onBinMouseUp);
+    }
+
+    function onBinMouseMove(event) {
+      if (!draggingBin.value) return;
+      const { bin, shelfName } = draggingBin.value;
+      const coords = getSvgCoords(event, shelfName);
+      const shelfWidth = shuttleStore.getShelfWidth({ name: shelfName });
+      const shelfDepth = shuttleStore.getShelfDepth({ name: shelfName });
+
+      let newX = coords.x - binOffset.value.x;
+      let newY = coords.y - binOffset.value.y;
+
+      newX = Math.max(0, Math.min(100 - (bin.width / shelfWidth) * 100, newX));
+      newY = Math.max(0, Math.min(100 - (bin.depth / shelfDepth) * 100, newY));
+
+      const realX = (newX / 100) * shelfWidth;
+      const realY = (newY / 100) * shelfDepth;
+
+      // Overlap test
+      if (
+        !isBinMovementOverlapping(
+          bin,
+          shelfName,
+          realX,
+          realY,
+          bin.width,
+          bin.depth
+        )
+      ) {
+        bin.position.x = realX;
+        bin.position.y = realY;
+      }
+    }
+
+    function onBinMouseUp(event) {
+      draggingBin.value = null;
+      document.removeEventListener("mousemove", onBinMouseMove);
+      document.removeEventListener("mouseup", onBinMouseUp);
+    }
+
+    function isBinMovementOverlapping(currentBin, shelfName, x, y, w, h) {
+      const bins = binStore.binShelves[shelfName] || [];
+      return bins.some((bin) => {
+        if (bin === currentBin) return false;
+        // Axis-aligned bounding box (AABB) overlap
+        return !(
+          x + w <= bin.position.x ||
+          x >= bin.position.x + bin.width ||
+          y + h <= bin.position.y ||
+          y >= bin.position.y + bin.depth
+        );
+      });
+    }
+    /** -- End Drag Bin Handlers -- */
 
     // Description dialog state
     const showBinDescriptionDialog = ref(false);
@@ -768,6 +853,8 @@ export default {
       openDuplicateShelfDialog,
 
       onTableSelection,
+      // Drag bin handlers
+      onBinMouseDown,
     };
   },
 };
