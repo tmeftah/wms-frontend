@@ -2,26 +2,33 @@
   <div>
     <q-splitter v-model="splitterModel">
       <template v-slot:before>
-        <div class="q-pa-md">
-          <q-btn
-            @click="shuttleStore.addShuttle"
-            label="Add Shuttle"
-            color="primary"
-            class="q-mb-md"
-          />
-          <q-btn
-            @click="shuttleStore.addShelfToSelectedShuttle(selectedShuttle)"
-            label="Add Shelf"
-            :disable="!selectedShuttle"
-            color="secondary"
-            class="q-mb-md"
-          />
-          <q-btn
-            @click="showBinDialog = true"
-            label="Manage Bins"
-            color="accent"
-            class="q-mb-md"
-          />
+        <q-card class="q-pa-lg q-mt-md" flat bordered>
+          <div class="text-h6 q-mb-lg">Shuttles &amp; Shelves</div>
+          <div class="row q-gutter-md q-mb-lg">
+            <q-btn
+              @click="shuttleStore.addShuttle"
+              label="Add Shuttle"
+              color="primary"
+              icon="add"
+              flat
+            />
+            <q-btn
+              @click="shuttleStore.addShelfToSelectedShuttle(selectedShuttle)"
+              label="Add Shelf"
+              :disable="!selectedShuttle"
+              color="secondary"
+              icon="add_circle"
+              flat
+            />
+            <q-btn
+              @click="showBinDialog = true"
+              label="Manage Bins"
+              color="accent"
+              icon="dashboard"
+              flat
+            />
+          </div>
+          <q-separator spaced color="grey-3" />
           <q-tree
             :nodes="shuttleStore.simple"
             node-key="label"
@@ -29,8 +36,10 @@
             v-model:selected="selected"
             default-expand-all
             @update:selected="updateSelectedShuttle"
+            dense
+            bordered
           />
-        </div>
+        </q-card>
       </template>
 
       <template v-slot:after>
@@ -45,37 +54,47 @@
             :key="shuttle.name"
             :name="shuttle.name"
           >
-            <div class="q-gutter-md q-mb-md">
-              <div class="text-h4">{{ shuttle.title }}</div>
-              <q-input
-                v-model="shuttle.editName"
-                label="Shuttle Name"
-                filled
-                class="q-mb-md"
-                @blur="onShuttleNameChange(shuttle)"
-              />
-              <q-input
-                v-model="shuttle.width"
-                label="Width"
-                filled
-                type="number"
-                class="q-mb-md"
-              />
-              <q-input
-                v-model="shuttle.depth"
-                label="Depth"
-                filled
-                type="number"
-                class="q-mb-md"
-              />
-              <q-btn
-                @click="shuttleStore.removeShuttle(shuttle.name)"
-                label="Remove Shuttle"
-                color="negative"
-                outlined
-                class="q-mb-md"
-              />
-            </div>
+            <q-card class="q-pa-lg q-mt-md" flat bordered>
+              <div class="q-gutter-md q-mb-md row items-center">
+                <div class="text-h4 text-primary">{{ shuttle.title }}</div>
+              </div>
+              <div class="q-gutter-md row items-center">
+                <q-input
+                  v-model="shuttle.editName"
+                  label="Shuttle Name"
+                  filled
+                  class="q-mb-md"
+                  @blur="onShuttleNameChange(shuttle)"
+                  dense
+                />
+                <q-input
+                  v-model="shuttle.width"
+                  label="Width"
+                  filled
+                  type="number"
+                  class="q-mb-md"
+                  dense
+                />
+                <q-input
+                  v-model="shuttle.depth"
+                  label="Depth"
+                  filled
+                  type="number"
+                  class="q-mb-md"
+                  dense
+                />
+                <q-btn
+                  @click="shuttleStore.removeShuttle(shuttle.name)"
+                  label="Remove Shuttle"
+                  color="negative"
+                  outlined
+                  class="q-mb-md"
+                  icon="delete"
+                  flat
+                  dense
+                />
+              </div>
+            </q-card>
           </q-tab-panel>
 
           <q-tab-panel
@@ -83,183 +102,146 @@
             :key="shelf.name"
             :name="shelf.name"
           >
-            <div class="display: flex; flex-direction: column;">
-              <div class="text-h4">{{ shelf.title }}</div>
-              <q-btn
-                @click="showBinSelector(shelf.name)"
-                label="Add Bin to Shelf"
-                color="primary"
-                class="q-mb-md"
-              />
-              <q-btn
-                @click="shuttleStore.removeShelf(shelf.name)"
-                label="Remove Shelf"
-                color="negative"
-                outlined
-                class="q-mb-md"
-              />
-              <div class="shelf-container">
-                <!-- Add Description for ALL bins on this shelf -->
-                <q-btn
-                  class="q-mb-sm"
-                  color="accent"
-                  icon="edit"
-                  label="Set Description for All Bins"
-                  @click="openBinDescriptionDialogForAll(shelf.name)"
-                />
-
-                <!-- Button to duplicate shelf and bins -->
-                <q-btn
-                  class="q-mb-sm q-ml-sm"
-                  color="primary"
-                  icon="content_copy"
-                  label="Duplicate Shelf (with bins)"
-                  @click="openDuplicateShelfDialog(shelf.name)"
-                />
-
-                <svg
-                  :ref="(el) => (svgRefs[shelf.name] = el)"
-                  viewBox="0 0 100 100"
-                  preserveAspectRatio="none"
-                  style="touch-action: none; user-select: none"
-                  @mousedown="onSvgMouseDown(shelf.name, $event)"
-                >
-                  <g
-                    v-for="(bin, index) in binStore.binShelves[shelf.name]"
-                    :key="index"
-                  >
-                    <rect
-                      :x="
-                        (bin.position.x / shuttleStore.getShelfWidth(shelf)) *
-                        100
-                      "
-                      :y="
-                        (bin.position.y / shuttleStore.getShelfDepth(shelf)) *
-                        100
-                      "
-                      :width="
-                        (bin.width / shuttleStore.getShelfWidth(shelf)) * 100
-                      "
-                      :height="
-                        (bin.depth / shuttleStore.getShelfDepth(shelf)) * 100
-                      "
-                      :fill="getBinFillColor(bin)"
-                      :stroke="
-                        selectedBins.includes(bin) ? '#FF9800' : '#0D47A1'
-                      "
-                      :stroke-width="selectedBins.includes(bin) ? 2 : 0.5"
-                      @click.stop="selectBin(shelf.name, bin, $event)"
-                      @contextmenu.prevent.stop="
-                        openBinDescriptionDialog(shelf.name, bin, $event)
-                      "
-                      :title="bin.description || ''"
-                      style="pointer-events: auto"
-                    />
-                    <!-- Bin number label (x+y) centered over rect -->
-                    <!-- <text
-                      :x="
-                        ((bin.position.x + bin.width / 2) /
-                          shuttleStore.getShelfWidth(shelf)) *
-                        100
-                      "
-                      :y="
-                        ((bin.position.y + bin.depth / 2) /
-                          shuttleStore.getShelfDepth(shelf)) *
-                        100
-                      "
-                      font-size="4"
-                      fill="#222"
-                      text-anchor="middle"
-                      alignment-baseline="middle"
-                      pointer-events="none"
-                    >
-                      {{ Math.round(bin.position.x) }}+{{
-                        Math.round(bin.position.y)
-                      }}
-                    </text> -->
-                  </g>
-                  <!-- Selection rectangle (overlay) -->
-                  <rect
-                    v-if="isSelecting && currentShelf === shelf.name"
-                    :x="Math.min(selectRect.x1, selectRect.x2)"
-                    :y="Math.min(selectRect.y1, selectRect.y2)"
-                    :width="Math.abs(selectRect.x2 - selectRect.x1)"
-                    :height="Math.abs(selectRect.y2 - selectRect.y1)"
-                    fill="rgba(33,150,243,0.2)"
-                    stroke="#2196F3"
-                    stroke-width="1"
-                    pointer-events="none"
-                  />
-                </svg>
-              </div>
-              <!-- Table under shelf with Bin List & Description -->
-              <q-table
-                dense
-                class="q-mt-md"
-                :rows="binStore.binShelves[shelf.name] || []"
-                :columns="[
-                  {
-                    name: 'number',
-                    label: '#(X+Y)',
-                    field: (row) =>
-                      row.position
-                        ? Math.round(row.position.x) +
-                          '+' +
-                          Math.round(row.position.y)
-                        : '',
-                    align: 'left',
-                  },
-                  {
-                    name: 'name',
-                    label: 'Bin Name',
-                    field: 'name',
-                    align: 'left',
-                  },
-                  {
-                    name: 'description',
-                    label: 'Description',
-                    field: 'description',
-                    align: 'left',
-                  },
-                ]"
-                row-key="name"
-                hide-bottom
-                flat
-                separator="horizontal"
-                :pagination="{ rowsPerPage: 100 }"
-              >
-                <template v-slot:body-cell-number="props">
-                  <q-td
-                    >{{ Math.round(props.row.position.x) }}+{{
-                      Math.round(props.row.position.y)
-                    }}</q-td
-                  >
-                </template>
-                <template v-slot:body-cell-name="props">
-                  <q-td>{{ props.row.name }}</q-td>
-                </template>
-                <template v-slot:body-cell-description="props">
-                  <q-td>{{ props.row.description }}</q-td>
-                </template>
-              </q-table>
-              <!-- <div v-if="selectedBins.length && currentShelf === shelf.name">
-                <div
-                  v-for="bin in selectedBins"
-                  :key="bin.name + '-' + bin.position.x + '-' + bin.position.y"
-                >
-                  <q-chip color="amber-2" class="q-mt-sm q-mr-sm">
-                    {{ bin.name }} - {{ bin.description || "No description" }}
-                  </q-chip>
+            <!-- SVG Shelf View -->
+            <q-card flat bordered class="q-mt-md q-pa-none">
+              <div class="shelf-container-box q-pa-md">
+                <div class="text-h6 text-primary q-mb-sm">
+                  {{ shelf.title }}
                 </div>
-              </div> -->
-            </div>
+                <q-separator spaced class="q-mb-sm" />
+                <div class="row q-gutter-sm q-mb-md">
+                  <q-btn
+                    @click="showBinSelector(shelf.name)"
+                    label="Add Bin"
+                    color="primary"
+                    icon="add_box"
+                    dense
+                  />
+                  <q-btn
+                    @click="shuttleStore.removeShelf(shelf.name)"
+                    label="Remove Shelf"
+                    color="negative"
+                    icon="delete_outline"
+                    outlined
+                    dense
+                  />
+                  <q-btn
+                    color="accent"
+                    icon="edit"
+                    label="Set All Bin Descriptions"
+                    @click="openBinDescriptionDialogForAll(shelf.name)"
+                    dense
+                  />
+                  <q-btn
+                    color="primary"
+                    icon="content_copy"
+                    label="Duplicate Shelf"
+                    @click="openDuplicateShelfDialog(shelf.name)"
+                    dense
+                  />
+                </div>
+                <div class="svg-scroll-wrapper">
+                  <svg
+                    :ref="(el) => (svgRefs[shelf.name] = el)"
+                    viewBox="0 0 100 100"
+                    preserveAspectRatio="none"
+                    style="touch-action: none; user-select: none"
+                    class="svg-shelf"
+                    @mousedown="onSvgMouseDown(shelf.name, $event)"
+                  >
+                    <g
+                      v-for="(bin, index) in binStore.binShelves[shelf.name]"
+                      :key="bin.name + '-' + index"
+                    >
+                      <rect
+                        :x="
+                          (bin.position.x / shuttleStore.getShelfWidth(shelf)) *
+                          100
+                        "
+                        :y="
+                          (bin.position.y / shuttleStore.getShelfDepth(shelf)) *
+                          100
+                        "
+                        :width="
+                          (bin.width / shuttleStore.getShelfWidth(shelf)) * 100
+                        "
+                        :height="
+                          (bin.depth / shuttleStore.getShelfDepth(shelf)) * 100
+                        "
+                        :fill="getBinFillColor(bin, shelf.name)"
+                        :stroke="
+                          isBinSelected(bin, shelf.name) ? '#FF9800' : '#0D47A1'
+                        "
+                        :stroke-width="isBinSelected(bin, shelf.name) ? 2 : 0.5"
+                        @click.stop="selectBin(shelf.name, bin, $event)"
+                        @contextmenu.prevent.stop="
+                          openBinDescriptionDialog(shelf.name, bin, $event)
+                        "
+                        :title="bin.description || ''"
+                        style="pointer-events: auto"
+                      />
+                    </g>
+                    <rect
+                      v-if="isSelecting && currentShelf === shelf.name"
+                      :x="Math.min(selectRect.x1, selectRect.x2)"
+                      :y="Math.min(selectRect.y1, selectRect.y2)"
+                      :width="Math.abs(selectRect.x2 - selectRect.x1)"
+                      :height="Math.abs(selectRect.y2 - selectRect.y1)"
+                      fill="rgba(33,150,243,0.2)"
+                      stroke="#2196F3"
+                      stroke-width="1"
+                      pointer-events="none"
+                    />
+                  </svg>
+                </div>
+              </div>
+            </q-card>
+            <!-- Table for bins below shelf -->
+            <q-card class="q-mt-lg" flat bordered>
+              <q-card-section>
+                <div class="text-h6 q-mb-md">Bins on Shelf</div>
+
+                <q-table
+                  dense
+                  class="q-mt-sm"
+                  :rows="binStore.binShelves[shelf.name] || []"
+                  :columns="columns"
+                  :row-key="rowKey"
+                  hide-bottom
+                  flat
+                  separator="horizontal"
+                  :pagination="{ rowsPerPage: 100 }"
+                  v-model:selected="selectedBinsPerShelf[shelf.name]"
+                  selection="multiple"
+                >
+                  <template v-slot:body-cell-number="props">
+                    <q-td
+                      :class="{
+                        'bg-amber-1': isBinSelected(props.row, shelf.name),
+                        'text-black': isBinSelected(props.row, shelf.name),
+                      }"
+                      >{{ Math.round(props.row.position.x) }}+{{
+                        Math.round(props.row.position.y)
+                      }}</q-td
+                    >
+                  </template>
+                  <template v-slot:body-cell-name="props">
+                    <q-td>{{ props.row.name }}</q-td>
+                  </template>
+                  <template v-slot:body-cell-description="props">
+                    <q-td>{{ props.row.description }}</q-td>
+                  </template>
+                </q-table>
+              </q-card-section>
+            </q-card>
           </q-tab-panel>
         </q-tab-panels>
       </template>
     </q-splitter>
 
+    <!-- ... the rest of your dialogs unchanged ... -->
     <q-dialog v-model="showBinDialog">
-      <q-card>
+      <q-card style="min-width: 350px">
         <q-card-section>
           <div class="text-h6">Manage Bins</div>
         </q-card-section>
@@ -277,7 +259,15 @@
             filled
             type="number"
           />
-          <q-btn flat label="Add Bin" color="primary" @click="addNewBin" />
+          <q-btn
+            flat
+            label="Add Bin"
+            color="primary"
+            icon="add"
+            @click="addNewBin"
+            class="q-mb-md"
+          />
+
           <q-list bordered>
             <q-item v-for="bin in binStore.bins" :key="bin.name">
               <q-item-section>
@@ -289,6 +279,7 @@
                   icon="add"
                   color="positive"
                   @click.stop="selectBinForShelf(bin)"
+                  dense
                 />
               </q-item-section>
             </q-item>
@@ -301,10 +292,21 @@
     </q-dialog>
 
     <q-dialog v-model="showBinDescriptionDialog">
-      <q-card>
+      <q-card style="min-width: 350px">
         <q-card-section>
-          <div class="text-h6">
-            Set Description for Selected Bins ({{ selectedBins.length }})
+          <div class="text-h6 text-primary">
+            Set Description for
+            {{
+              selectedShelf && selectedBinsPerShelf[selectedShelf]
+                ? selectedBinsPerShelf[selectedShelf].length
+                : 0
+            }}
+            Bin<span
+              v-if="
+                selectedShelf && selectedBinsPerShelf[selectedShelf]?.length > 1
+              "
+              >s</span
+            >
           </div>
         </q-card-section>
         <q-card-section>
@@ -316,20 +318,21 @@
             autofocus
           />
         </q-card-section>
+        <q-separator spaced />
         <q-card-actions align="right">
           <q-btn
             color="primary"
             label="Apply"
+            icon="done"
             @click="setDescriptionForSelectedBins"
           />
-          <q-btn flat label="Cancel" v-close-popup />
+          <q-btn flat label="Cancel" icon="close" v-close-popup />
         </q-card-actions>
       </q-card>
     </q-dialog>
 
-    <!-- Duplicate Shelf Dialog -->
     <q-dialog v-model="showDuplicateShelfDialog">
-      <q-card>
+      <q-card style="min-width: 350px">
         <q-card-section>
           <div class="text-h6">
             Duplicate Shelf:
@@ -364,10 +367,9 @@
 </template>
 
 <script>
-import { ref, onMounted, onBeforeUnmount } from "vue";
+import { ref, reactive, onMounted, onBeforeUnmount, computed } from "vue";
 import { useShuttleStore } from "../stores/useShuttleStore";
 import { useBinStore } from "../stores/useBinStore";
-
 import { useQuasar } from "quasar";
 
 export default {
@@ -375,6 +377,33 @@ export default {
     const $q = useQuasar();
     const shuttleStore = useShuttleStore();
     const binStore = useBinStore();
+
+    // Per-shelf bin selection (always use reference equality)
+    const selectedBinsPerShelf = reactive({});
+
+    const columns = [
+      {
+        name: "number",
+        label: "#(X+Y)",
+        field: (row) =>
+          row.position
+            ? Math.round(row.position.x) + "+" + Math.round(row.position.y)
+            : "",
+        align: "left",
+      },
+      {
+        name: "name",
+        label: "Bin Name",
+        field: "name",
+        align: "left",
+      },
+      {
+        name: "description",
+        label: "Description",
+        field: "description",
+        align: "left",
+      },
+    ];
 
     const showDuplicateShelfDialog = ref(false);
     const shelfToDuplicate = ref("");
@@ -392,7 +421,6 @@ export default {
       depth: 0,
     });
 
-    const selectedBins = ref([]);
     const selectedShelf = ref(null);
 
     // Drag selection state
@@ -411,13 +439,18 @@ export default {
       };
     }
 
+    function rowKey(row) {
+      return `${row.name}-${Math.round(row.position.x)}-${Math.round(
+        row.position.y
+      )}`;
+    }
+
     function onSvgMouseDown(shelfName, event) {
       if (event.button !== 0) return;
       currentShelf.value = shelfName;
       isSelecting.value = true;
-      // If Ctrl/Meta is NOT pressed, start a new selection. Otherwise add to existing selection.
-      if (!(event.ctrlKey || event.metaKey)) {
-        selectedBins.value = [];
+      if (!event.ctrlKey && !event.metaKey) {
+        selectedBinsPerShelf[shelfName] = [];
       }
       const { x, y } = getSvgCoords(event, shelfName);
       selectRect.value = { x1: x, y1: y, x2: x, y2: y };
@@ -464,19 +497,19 @@ export default {
         );
       });
 
-      // If Ctrl/Meta is pressed (preserved from mouseDown), add to existing
       if (originEvent && (originEvent.ctrlKey || originEvent.metaKey)) {
-        selectedBins.value = [
-          ...selectedBins.value,
-          ...binsInRect.filter((b) => !selectedBins.value.includes(b)),
+        selectedBinsPerShelf[shelfName] = [
+          ...(selectedBinsPerShelf[shelfName] || []),
+          ...binsInRect.filter(
+            (b) => !(selectedBinsPerShelf[shelfName] || []).includes(b)
+          ),
         ];
       } else {
-        // No modifier: replace
-        selectedBins.value = binsInRect;
+        selectedBinsPerShelf[shelfName] = binsInRect;
       }
     }
 
-    function onSvgMouseUp(event) {
+    function onSvgMouseUp() {
       isSelecting.value = false;
     }
 
@@ -514,59 +547,91 @@ export default {
       showBinDialog.value = true;
     };
 
-    // Multi-bin select support
+    /** Helper for bin comparison by object reference */
+    function isBinSelected(bin, shelfName) {
+      const arr = selectedBinsPerShelf[shelfName];
+      if (!arr) return false;
+      return arr.includes(bin);
+    }
+
+    // Multi-bin select support (SVG click)
     const selectBin = (shelfName, bin, event) => {
       selectedShelf.value = shelfName;
       if (isSelecting.value) return;
-      // Accept Control, Meta (Cmd/Strg), or Shift for additive selection
+      if (!selectedBinsPerShelf[shelfName])
+        selectedBinsPerShelf[shelfName] = [];
       if (event && (event.ctrlKey || event.metaKey)) {
-        if (selectedBins.value.includes(bin)) {
-          selectedBins.value = selectedBins.value.filter((b) => b !== bin);
+        if (selectedBinsPerShelf[shelfName].includes(bin)) {
+          selectedBinsPerShelf[shelfName] = selectedBinsPerShelf[
+            shelfName
+          ].filter((b) => b !== bin);
         } else {
-          selectedBins.value = [...selectedBins.value, bin];
+          selectedBinsPerShelf[shelfName] = [
+            ...selectedBinsPerShelf[shelfName],
+            bin,
+          ];
         }
       } else {
-        selectedBins.value = [bin];
+        selectedBinsPerShelf[shelfName] = [bin];
       }
-      currentShelf.value = shelfName;
     };
 
-    const openBinDescriptionDialog = (shelfName, bin, event) => {
+    // Table selection sync: this gets called when you click checkboxes in the table.
+    function onTableSelection(shelfName, { rows }) {
       selectedShelf.value = shelfName;
-      currentShelf.value = shelfName;
-      if (!selectedBins.value.includes(bin)) {
-        selectedBins.value = [bin];
+      selectedBinsPerShelf[shelfName] = rows;
+    }
+
+    function openBinDescriptionDialog(shelfName, bin) {
+      selectedShelf.value = shelfName;
+      if (!selectedBinsPerShelf[shelfName])
+        selectedBinsPerShelf[shelfName] = [];
+      if (!selectedBinsPerShelf[shelfName].includes(bin)) {
+        selectedBinsPerShelf[shelfName] = [bin];
       }
       showBinDescriptionDialog.value = true;
-      descriptionInput.value = selectedBins.value[0]?.description || "";
-    };
+      descriptionInput.value =
+        selectedBinsPerShelf[shelfName][0]?.description || "";
+    }
 
-    const setDescriptionForSelectedBins = () => {
-      if (!selectedShelf.value || !selectedBins.value.length) return;
+    function setDescriptionForSelectedBins() {
+      if (
+        !selectedShelf.value ||
+        !selectedBinsPerShelf[selectedShelf.value]?.length
+      )
+        return;
       binStore.setDescriptionForBins(
         selectedShelf.value,
-        selectedBins.value,
+        selectedBinsPerShelf[selectedShelf.value],
         descriptionInput.value
       );
       showBinDescriptionDialog.value = false;
-      selectedBins.value = [];
-    };
+      selectedBinsPerShelf[selectedShelf.value] = [];
+    }
 
-    // Delete selected bins (optional)
-    const removeSelectedBin = () => {
-      if (selectedBins.value.length && selectedShelf.value) {
-        selectedBins.value.forEach((bin) => {
+    // Delete selected bins on keyboard Delete
+    function removeSelectedBin() {
+      if (
+        selectedShelf.value &&
+        selectedBinsPerShelf[selectedShelf.value]?.length
+      ) {
+        const toRemove = selectedBinsPerShelf[selectedShelf.value];
+        toRemove.forEach((bin) => {
           binStore.removeBinFromShelf(selectedShelf.value, bin);
         });
-        selectedBins.value = [];
-        selectedShelf.value = null;
+        selectedBinsPerShelf[selectedShelf.value] = [];
       }
-    };
-    const handleKeyDown = (event) => {
-      if (event.key === "Delete" && selectedBins.value.length) {
+    }
+
+    function handleKeyDown(event) {
+      if (
+        event.key === "Delete" &&
+        selectedShelf.value &&
+        selectedBinsPerShelf[selectedShelf.value]?.length
+      ) {
         removeSelectedBin();
       }
-    };
+    }
 
     onMounted(() => {
       window.addEventListener("keydown", handleKeyDown);
@@ -575,12 +640,13 @@ export default {
       window.removeEventListener("keydown", handleKeyDown);
     });
 
-    function getBinFillColor(bin) {
-      // Selected and has description: yellowish
-      if (selectedBins.value.includes(bin)) {
-        return bin.description ? "#FFD54F" : "#E57373"; // yellow or red
+    function getBinFillColor(bin, shelfName) {
+      if (
+        selectedBinsPerShelf[shelfName] &&
+        selectedBinsPerShelf[shelfName].includes(bin)
+      ) {
+        return bin.description ? "#FFD54F" : "#E57373";
       }
-      // Not selected, but has description: blue; no description: grey
       return bin.description ? "#42A5F5" : "#B0BEC5";
     }
 
@@ -588,8 +654,7 @@ export default {
       const shelfBins = binStore.binShelves[shelfName] || [];
       if (!shelfBins.length) return;
       selectedShelf.value = shelfName;
-      currentShelf.value = shelfName;
-      selectedBins.value = [...shelfBins];
+      selectedBinsPerShelf[shelfName] = [...shelfBins];
       showBinDescriptionDialog.value = true;
       descriptionInput.value = shelfBins[0].description || "";
     }
@@ -600,36 +665,6 @@ export default {
       duplicateBins.value = true;
       duplicateDescriptions.value = true;
       showDuplicateShelfDialog.value = true;
-    }
-
-    function duplicateShelfWithBins(shelfName) {
-      // Find the existing shelf object from shuttleStore
-      const sourceShelf = shuttleStore.shelfDetails.find(
-        (s) => s.name === shelfName
-      );
-      if (!sourceShelf) {
-        $q.notify({ color: "negative", message: "Shelf not found!" });
-        return;
-      }
-      // Add shelf to the store/shuttle
-      const newShelf = shuttleStore.addShelfToSelectedShuttle(
-        selectedShuttle.value
-      );
-
-      // Duplicate all bins in the shelf
-      if (binStore.binShelves[shelfName]) {
-        // Deep clone bins
-        const binsForNewShelf = binStore.binShelves[shelfName].map((bin) => ({
-          ...JSON.parse(JSON.stringify(bin)),
-        }));
-        binStore.binShelves[newShelf] = binsForNewShelf;
-        binStore.$patch({ binShelves: { ...binStore.binShelves } });
-        binStore.saveState();
-      }
-      $q.notify({
-        color: "positive",
-        message: `Shelf "${newShelf}" duplicated with bins.`,
-      });
     }
 
     function runDuplicateShelf() {
@@ -650,7 +685,6 @@ export default {
           selectedShuttle.value
         );
 
-        // Duplicate bins if the checkbox is checked
         if (duplicateBins.value && binStore.binShelves[origShelfName]) {
           const binsForNewShelf = binStore.binShelves[origShelfName].map(
             (bin) => {
@@ -665,7 +699,6 @@ export default {
           binStore.$patch({ binShelves: { ...binStore.binShelves } });
           binStore.saveState();
         } else {
-          // If not duplicating bins, create empty shelf.bins
           binStore.binShelves[newShelf] = [];
           binStore.$patch({ binShelves: { ...binStore.binShelves } });
           binStore.saveState();
@@ -692,64 +725,90 @@ export default {
       binData,
       shuttleStore,
       binStore,
+      columns,
       shelfToDuplicate,
       duplicateCount,
       duplicateBins,
       duplicateDescriptions,
       showDuplicateShelfDialog,
 
-      getBinFillColor,
-      updateSelectedShuttle,
-      onShuttleNameChange,
-      addNewBin,
-      selectBinForShelf,
-      showBinSelector,
-
-      selectedBins,
+      // For shelf panels
       selectedShelf,
-      selectBin,
-      showBinDescriptionDialog,
-      openBinDescriptionDialog,
-      descriptionInput,
-      setDescriptionForSelectedBins,
-      openBinDescriptionDialogForAll,
-      runDuplicateShelf,
-      openDuplicateShelfDialog,
+      selectedBinsPerShelf,
 
+      // SVG and selection
       svgRefs,
       isSelecting,
       selectRect,
       currentShelf,
+      rowKey,
+
       onSvgMouseDown,
+      selectBin,
+      getBinFillColor,
+      isBinSelected,
+
+      // Dialogs and multi-selection
+      openBinDescriptionDialog,
+      openBinDescriptionDialogForAll,
+      setDescriptionForSelectedBins,
+      showBinDescriptionDialog,
+      descriptionInput,
+
+      addNewBin,
+      selectBinForShelf,
+      showBinSelector,
+
+      updateSelectedShuttle,
+      onShuttleNameChange,
+
+      removeSelectedBin,
+
+      runDuplicateShelf,
+      openDuplicateShelfDialog,
+
+      onTableSelection,
     };
   },
 };
 </script>
 
 <style scoped>
-.q-pa-md {
-  padding: 16px;
+.shelf-container-box {
+  background: linear-gradient(135deg, #fafdff 0%, #dbeef9 100%);
+  border-radius: 12px;
+  box-shadow: 0 2px 8px #d1e5f5;
 }
-.q-mb-md {
-  margin-bottom: 16px;
+.svg-scroll-wrapper {
+  width: 100%;
+  max-width: 510px;
+  height: 270px;
+  overflow-x: auto;
+  overflow-y: auto;
+  margin: 0 auto;
+  background-color: #e7f4fd;
+  border-radius: 8px;
+  border: 1.5px dashed #90caf9;
+  padding: 6px;
+  box-sizing: border-box;
+}
+.svg-shelf {
+  width: 100%;
+  height: 250px;
+  min-width: 100%;
+  background-color: transparent;
+  user-select: none;
+  display: block;
+}
+.q-mt-lg {
+  margin-top: 32px;
+}
+.q-mt-md {
+  margin-top: 16px;
 }
 .q-gutter-md {
   display: flex;
   align-items: center;
   justify-content: space-between;
-}
-.shelf-container {
-  width: 350px;
-  height: 250px;
-  max-width: 100%;
-  max-height: 100%;
-}
-svg {
-  width: 100%;
-  height: 100%;
-  user-select: none;
-  background-color: #dff1fc;
-  border: 1px dotted #616161;
-  padding: 2px;
 }
 </style>
