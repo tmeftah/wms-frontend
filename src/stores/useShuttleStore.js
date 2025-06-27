@@ -92,6 +92,7 @@ export const useShuttleStore = defineStore("shuttle", () => {
 
     shelfCounters.value[selectedShuttle] += 1;
     saveState();
+    return newShelfLabel;
   };
 
   const updateShuttleName = (oldName, newName) => {

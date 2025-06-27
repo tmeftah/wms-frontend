@@ -106,5 +106,6 @@ export const useBinStore = defineStore("bin", () => {
     addBinToShelf,
     removeBinFromShelf,
     setDescriptionForBins,
+    saveState,
   };
 });

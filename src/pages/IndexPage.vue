@@ -99,6 +99,24 @@
                 class="q-mb-md"
               />
               <div class="shelf-container">
+                <!-- Add Description for ALL bins on this shelf -->
+                <q-btn
+                  class="q-mb-sm"
+                  color="accent"
+                  icon="edit"
+                  label="Set Description for All Bins"
+                  @click="openBinDescriptionDialogForAll(shelf.name)"
+                />
+
+                <!-- Button to duplicate shelf and bins -->
+                <q-btn
+                  class="q-mb-sm q-ml-sm"
+                  color="primary"
+                  icon="content_copy"
+                  label="Duplicate Shelf (with bins)"
+                  @click="duplicateShelfWithBins(shelf.name)"
+                />
+
                 <svg
                   :ref="(el) => (svgRefs[shelf.name] = el)"
                   viewBox="0 0 100 100"
@@ -316,8 +334,11 @@ import { ref, onMounted, onBeforeUnmount } from "vue";
 import { useShuttleStore } from "../stores/useShuttleStore";
 import { useBinStore } from "../stores/useBinStore";
 
+import { useQuasar } from "quasar";
+
 export default {
   setup() {
+    const $q = useQuasar();
     const shuttleStore = useShuttleStore();
     const binStore = useBinStore();
 
@@ -487,6 +508,7 @@ export default {
         descriptionInput.value
       );
       showBinDescriptionDialog.value = false;
+      selectedBins.value = [];
     };
 
     // Delete selected bins (optional)
@@ -521,6 +543,46 @@ export default {
       return bin.description ? "#42A5F5" : "#B0BEC5";
     }
 
+    function openBinDescriptionDialogForAll(shelfName) {
+      const shelfBins = binStore.binShelves[shelfName] || [];
+      if (!shelfBins.length) return;
+      selectedShelf.value = shelfName;
+      currentShelf.value = shelfName;
+      selectedBins.value = [...shelfBins];
+      showBinDescriptionDialog.value = true;
+      descriptionInput.value = shelfBins[0].description || "";
+    }
+
+    function duplicateShelfWithBins(shelfName) {
+      // Find the existing shelf object from shuttleStore
+      const sourceShelf = shuttleStore.shelfDetails.find(
+        (s) => s.name === shelfName
+      );
+      if (!sourceShelf) {
+        $q.notify({ color: "negative", message: "Shelf not found!" });
+        return;
+      }
+      // Add shelf to the store/shuttle
+      const newShelf = shuttleStore.addShelfToSelectedShuttle(
+        selectedShuttle.value
+      );
+
+      // Duplicate all bins in the shelf
+      if (binStore.binShelves[shelfName]) {
+        // Deep clone bins
+        const binsForNewShelf = binStore.binShelves[shelfName].map((bin) => ({
+          ...JSON.parse(JSON.stringify(bin)),
+        }));
+        binStore.binShelves[newShelf] = binsForNewShelf;
+        binStore.$patch({ binShelves: { ...binStore.binShelves } });
+        binStore.saveState();
+      }
+      $q.notify({
+        color: "positive",
+        message: `Shelf "${newShelf}" duplicated with bins.`,
+      });
+    }
+
     return {
       splitterModel,
       selected,
@@ -543,6 +605,8 @@ export default {
       openBinDescriptionDialog,
       descriptionInput,
       setDescriptionForSelectedBins,
+      openBinDescriptionDialogForAll,
+      duplicateShelfWithBins,
 
       svgRefs,
       isSelecting,
@@ -576,5 +640,8 @@ svg {
   width: 100%;
   height: 100%;
   user-select: none;
+  background-color: #dff1fc;
+  border: 1px dotted #616161;
+  padding: 2px;
 }
 </style>
