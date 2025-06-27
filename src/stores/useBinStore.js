@@ -1,12 +1,12 @@
+// useBinStore.js
 import { defineStore } from "pinia";
 import { ref } from "vue";
-import { useShuttleStore } from "./useShuttleStore"; // Import the shuttle store
+import { useShuttleStore } from "./useShuttleStore";
 
 export const useBinStore = defineStore("bin", () => {
   const bins = ref([]);
   const binShelves = ref({});
 
-  // Function to load state from localStorage
   const loadState = () => {
     if (localStorage.getItem("binStore")) {
       const savedState = JSON.parse(localStorage.getItem("binStore"));
@@ -15,7 +15,6 @@ export const useBinStore = defineStore("bin", () => {
     }
   };
 
-  // Function to save state to localStorage
   const saveState = () => {
     localStorage.setItem(
       "binStore",
@@ -28,11 +27,11 @@ export const useBinStore = defineStore("bin", () => {
 
   const addBin = (bin) => {
     bins.value.push(bin);
-    saveState(); // Save new state
+    saveState();
   };
 
   const addBinToShelf = (shelfName, bin) => {
-    const shuttleStore = useShuttleStore(); // Get the shuttle store
+    const shuttleStore = useShuttleStore();
     const shuttleWidth = shuttleStore.getShelfWidth({ name: shelfName });
     const shuttleDepth = shuttleStore.getShelfDepth({ name: shelfName });
 
@@ -41,13 +40,8 @@ export const useBinStore = defineStore("bin", () => {
     }
     const shelfBins = binShelves.value[shelfName];
 
-    // Determine position for the bin on the shelf
     let position = { x: 0, y: 0 };
     let placed = false;
-
-    const canFit = (binToPlace, posX, posY) =>
-      posX + binToPlace.width <= shuttleWidth &&
-      posY + binToPlace.depth <= shuttleDepth;
 
     for (
       let possibleY = 0;
@@ -79,9 +73,8 @@ export const useBinStore = defineStore("bin", () => {
     }
 
     if (placed) {
-      // Allow adding the same bin multiple times by not removing the bin from the list
-      shelfBins.push({ ...bin, position });
-      saveState(); // Save new state
+      shelfBins.push({ ...bin, position, description: bin.description || "" });
+      saveState();
     }
   };
 
@@ -94,7 +87,16 @@ export const useBinStore = defineStore("bin", () => {
     saveState();
   };
 
-  // Load state when the store initializes
+  const setDescriptionForBins = (shelfName, binsToDescribe, description) => {
+    if (!binShelves.value[shelfName]) return;
+    binShelves.value[shelfName].forEach((bin) => {
+      if (binsToDescribe.includes(bin)) {
+        bin.description = description;
+      }
+    });
+    saveState();
+  };
+
   loadState();
 
   return {
@@ -103,5 +105,6 @@ export const useBinStore = defineStore("bin", () => {
     addBin,
     addBinToShelf,
     removeBinFromShelf,
+    setDescriptionForBins,
   };
 });
