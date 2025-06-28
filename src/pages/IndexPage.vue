@@ -43,16 +43,18 @@
             />
           </div>
           <q-separator spaced color="grey-3" />
-          <q-tree
-            :nodes="shuttleStore.simple"
-            node-key="label"
-            selected-color="primary"
-            v-model:selected="selected"
-            default-expand-all
-            @update:selected="updateSelectedShuttle"
-            dense
-            bordered
-          />
+          <q-scroll-area style="height: 80vh">
+            <q-tree
+              :nodes="shuttleStore.simple"
+              node-key="label"
+              selected-color="primary"
+              v-model:selected="selected"
+              default-expand-all
+              @update:selected="updateSelectedShuttle"
+              dense
+              bordered
+            />
+          </q-scroll-area>
         </q-card>
       </template>
 
