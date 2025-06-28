@@ -44,19 +44,19 @@ const linksList = [
     title: "Warehouse",
     caption: "Warehouse managemnent",
     icon: "factory",
-    link: "#",
+    link: "/warehouse",
   },
   {
     title: "Material",
     caption: "Material managemnent",
     icon: "category",
-    link: "#material",
+    link: "material",
   },
   {
     title: "Order",
     caption: "Order managemnent",
     icon: "shopping_cart",
-    link: "#order",
+    link: "order",
   },
 ];
 
