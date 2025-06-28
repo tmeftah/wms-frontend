@@ -1,12 +1,24 @@
 <template>
   <div>
     <!-- SPLITTER LAYOUT -->
-    <q-splitter v-model="splitterModel">
+    <q-splitter
+      v-model="splitterModel"
+      separator-style="{ backgroundColor: '#ff0000', }"
+      :limits="[30, 70]"
+    >
+      <template v-slot:separator>
+        <q-avatar
+          color="info"
+          text-color="white"
+          size="30px"
+          icon="drag_indicator"
+        />
+      </template>
       <!-- LEFT: SHUTTLES & SHELVES -->
       <template v-slot:before>
-        <q-card class="q-pa-lg q-mt-md" flat bordered>
+        <q-card class="q-pa-lg q-mt-md" flat>
           <div class="text-h6 q-mb-lg">Shuttles &amp; Shelves</div>
-          <div class="row q-gutter-md q-mb-lg">
+          <div class="row q-col-gutter-sm q-mb-lg">
             <q-btn
               @click="shuttleStore.addShuttle"
               label="Add Shuttle"
@@ -213,18 +225,15 @@
                   :rows="binStore.binShelves[shelf.name] || []"
                   :columns="columns"
                   :row-key="rowKey"
+                  :rows-per-page-options="[0]"
                   flat
-                  hide-bottom
                   dense
+                  virtual-scroll
                   separator="horizontal"
-                  :pagination="{ rowsPerPage: 100 }"
+                  :pagination="{ rowsPerPage: 0 }"
                   v-model:selected="selectedBinsPerShelf[shelf.name]"
                   selection="multiple"
-                  style="
-                    background: var(--q-color-grey-1, #f9fafb);
-                    border-radius: 10px;
-                    box-shadow: 0 1px 4px #c8d5e7a8;
-                  "
+                  style="max-height: 330px"
                 >
                   <template v-slot:body-cell-number="props">
                     <q-td
