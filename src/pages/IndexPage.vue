@@ -420,12 +420,8 @@
             min="1"
             filled
           />
-          <q-checkbox
-            v-model="duplicateBins"
-            label="Copy Bins"
-            class="q-mt-md"
-          />
-          <q-checkbox
+          <q-toggle v-model="duplicateBins" label="Copy Bins" />
+          <q-toggle
             v-model="duplicateDescriptions"
             label="Copy Bin Descriptions"
           />
