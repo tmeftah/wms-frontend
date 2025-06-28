@@ -1,6 +1,8 @@
 <template>
   <div>
+    <!-- SPLITTER LAYOUT -->
     <q-splitter v-model="splitterModel">
+      <!-- LEFT: SHUTTLES & SHELVES -->
       <template v-slot:before>
         <q-card class="q-pa-lg q-mt-md" flat bordered>
           <div class="text-h6 q-mb-lg">Shuttles &amp; Shelves</div>
@@ -42,6 +44,7 @@
         </q-card>
       </template>
 
+      <!-- RIGHT: TABS FOR SHELVES/SHUTTLES -->
       <template v-slot:after>
         <q-tab-panels
           v-model="selected"
@@ -49,6 +52,7 @@
           transition-prev="jump-up"
           transition-next="jump-up"
         >
+          <!-- SHUTTLE DETAIL TAB -->
           <q-tab-panel
             v-for="shuttle in shuttleStore.shuttleDetails"
             :key="shuttle.name"
@@ -97,12 +101,13 @@
             </q-card>
           </q-tab-panel>
 
+          <!-- SHELF DETAIL TAB -->
           <q-tab-panel
             v-for="shelf in shuttleStore.shelfDetails"
             :key="shelf.name"
             :name="shelf.name"
           >
-            <!-- SVG Shelf View -->
+            <!-- SHELF SVG + CONTROLS -->
             <q-card flat bordered class="q-mt-md q-pa-none">
               <div class="shelf-container-box q-pa-md">
                 <div class="text-h6 text-primary q-mb-sm">
@@ -112,7 +117,7 @@
                 <div class="row q-gutter-sm q-mb-md">
                   <q-btn
                     @click="showBinSelector(shelf.name)"
-                    label="Add Bin"
+                    label="Add Bin to Shelf"
                     color="primary"
                     icon="add_box"
                     dense
@@ -140,6 +145,7 @@
                     dense
                   />
                 </div>
+                <!-- SVG SHELF LAYOUT -->
                 <div class="svg-scroll-wrapper">
                   <svg
                     :ref="(el) => (svgRefs[shelf.name] = el)"
@@ -172,7 +178,7 @@
                         :stroke="
                           isBinSelected(bin, shelf.name) ? '#FF9800' : '#0D47A1'
                         "
-                        :stroke-width="isBinSelected(bin, shelf.name) ? 2 : 0.5"
+                        stroke-width="0.5"
                         @click.stop="selectBin(shelf.name, bin, $event)"
                         @mousedown.stop="
                           onBinMouseDown(shelf.name, bin, $event)
@@ -199,22 +205,26 @@
                 </div>
               </div>
             </q-card>
-            <!-- Table for bins below shelf -->
+            <!-- TABLE OF BINS ON SHELF -->
             <q-card class="q-mt-lg" flat bordered>
               <q-card-section>
                 <div class="text-h6 q-mb-md">Bins on Shelf</div>
                 <q-table
-                  dense
-                  class="q-mt-sm"
                   :rows="binStore.binShelves[shelf.name] || []"
                   :columns="columns"
                   :row-key="rowKey"
-                  hide-bottom
                   flat
+                  hide-bottom
+                  dense
                   separator="horizontal"
                   :pagination="{ rowsPerPage: 100 }"
                   v-model:selected="selectedBinsPerShelf[shelf.name]"
                   selection="multiple"
+                  style="
+                    background: var(--q-color-grey-1, #f9fafb);
+                    border-radius: 10px;
+                    box-shadow: 0 1px 4px #c8d5e7a8;
+                  "
                 >
                   <template v-slot:body-cell-number="props">
                     <q-td
@@ -222,10 +232,11 @@
                         'bg-amber-1': isBinSelected(props.row, shelf.name),
                         'text-black': isBinSelected(props.row, shelf.name),
                       }"
-                      >{{ Math.round(props.row.position.x) }}+{{
-                        Math.round(props.row.position.y)
-                      }}</q-td
                     >
+                      {{ Math.round(props.row.position.x) }}+{{
+                        Math.round(props.row.position.y)
+                      }}
+                    </q-td>
                   </template>
                   <template v-slot:body-cell-name="props">
                     <q-td>{{ props.row.name }}</q-td>
@@ -241,58 +252,117 @@
       </template>
     </q-splitter>
 
-    <!-- ... the rest of your dialogs unchanged ... -->
-    <q-dialog v-model="showBinDialog">
-      <q-card style="min-width: 350px">
-        <q-card-section>
-          <div class="text-h6">Manage Bins</div>
-        </q-card-section>
-        <q-card-section>
-          <q-input v-model="binData.name" label="Bin Name" filled />
-          <q-input
-            v-model.number="binData.width"
-            label="Width"
-            filled
-            type="number"
-          />
-          <q-input
-            v-model.number="binData.depth"
-            label="Depth"
-            filled
-            type="number"
-          />
-          <q-btn
-            flat
-            label="Add Bin"
-            color="primary"
-            icon="add"
-            @click="addNewBin"
-            class="q-mb-md"
-          />
-
-          <q-list bordered>
-            <q-item v-for="bin in binStore.bins" :key="bin.name">
-              <q-item-section>
-                <q-item-label>
-                  {{ bin.name }} ({{ bin.width }}x{{ bin.depth }})
-                </q-item-label>
-                <q-btn
-                  flat
-                  icon="add"
-                  color="positive"
-                  @click.stop="selectBinForShelf(bin)"
+    <!-- BIN MANAGER DIALOG (IMPROVED DESIGN) -->
+    <q-dialog v-model="showBinDialog" persistent>
+      <q-card style="width: 760px; max-width: 97vw; min-height: 470px">
+        <q-toolbar class="bg-primary text-white">
+          <q-toolbar-title
+            ><q-icon name="inventory_2" class="q-mr-sm" />Bin
+            Manager</q-toolbar-title
+          >
+          <q-btn flat round dense icon="close" v-close-popup />
+        </q-toolbar>
+        <q-separator />
+        <q-card-section class="row q-gutter-x-lg">
+          <!-- LEFT: ADD BIN FORM -->
+          <div class="col-5 q-pa-md bg-grey-2 bin-form">
+            <div class="text-subtitle1 q-mb-md text-weight-medium q-pl-xs">
+              New Bin
+            </div>
+            <q-form @submit.prevent="addNewBin">
+              <q-input
+                v-model="binData.name"
+                label="Name..."
+                outlined
+                dense
+                class="q-mb-md"
+                autocomplete="off"
+              />
+              <div class="row q-gutter-sm q-mb-md">
+                <q-input
+                  v-model.number="binData.width"
+                  label="Width"
+                  type="number"
+                  outlined
                   dense
+                  class="col"
                 />
-              </q-item-section>
-            </q-item>
-          </q-list>
+                <q-input
+                  v-model.number="binData.depth"
+                  label="Depth"
+                  type="number"
+                  outlined
+                  dense
+                  class="col"
+                />
+              </div>
+              <q-btn
+                unelevated
+                label="Add Bin"
+                color="primary"
+                class="full-width"
+                icon="add"
+                type="submit"
+                :disable="!binData.name || !binData.width || !binData.depth"
+              />
+            </q-form>
+          </div>
+
+          <!-- RIGHT: BIN TABLE -->
+          <div class="col q-pa-none">
+            <div
+              class="flex items-center justify-between q-mb-sm q-pl-xs q-pr-xs"
+            >
+              <div class="text-subtitle1 text-weight-medium">All Bins</div>
+              <q-input
+                v-model="binsFilter"
+                dense
+                debounce="200"
+                filled
+                placeholder="Filter Bins..."
+                style="min-width: 160px"
+              />
+            </div>
+            <q-table
+              :rows="filteredBins"
+              :columns="binTableColumns"
+              row-key="name"
+              dense
+              flat
+              hide-bottom
+              class="bins-table shadow-1"
+              style="max-height: 325px; overflow: auto"
+            >
+              <template v-slot:body-cell-action="props">
+                <q-td class="text-center q-px-xs">
+                  <q-btn
+                    v-if="Boolean(selectedShuttle)"
+                    color="secondary"
+                    icon="add_circle"
+                    flat
+                    dense
+                    size="sm"
+                    title="Add to shelf"
+                    @click="selectBinForShelf(props.row)"
+                  />
+                </q-td>
+              </template>
+              <template v-slot:no-data>
+                <div class="text-grey-7 text-center q-pa-md">
+                  No bins found.
+                </div>
+              </template>
+            </q-table>
+          </div>
         </q-card-section>
-        <q-card-actions align="right">
+        <q-card-actions align="right" class="q-mt-xs">
+          <q-space />
           <q-btn flat label="Close" color="primary" v-close-popup />
         </q-card-actions>
       </q-card>
     </q-dialog>
 
+    <!-- BIN DESCRIPTION DIALOG -->
     <q-dialog v-model="showBinDescriptionDialog">
       <q-card style="min-width: 350px">
         <q-card-section>
@@ -333,6 +403,7 @@
       </q-card>
     </q-dialog>
 
+    <!-- DUPLICATE SHELF DIALOG -->
     <q-dialog v-model="showDuplicateShelfDialog">
       <q-card style="min-width: 350px">
         <q-card-section>
@@ -369,7 +440,7 @@
 </template>
 
 <script>
-import { ref, reactive, onMounted, onBeforeUnmount } from "vue";
+import { ref, computed, reactive, onMounted, onBeforeUnmount } from "vue";
 import { useShuttleStore } from "../stores/useShuttleStore";
 import { useBinStore } from "../stores/useBinStore";
 import { useQuasar } from "quasar";
@@ -380,9 +451,10 @@ export default {
     const shuttleStore = useShuttleStore();
     const binStore = useBinStore();
 
-    // Per-shelf bin selection (always use reference equality)
     const selectedBinsPerShelf = reactive({});
+    const binsFilter = ref("");
 
+    // Original columns for shelf bin-table
     const columns = [
       {
         name: "number",
@@ -407,6 +479,41 @@ export default {
       },
     ];
 
+    // Table columns for bin manager
+    const binTableColumns = [
+      {
+        name: "name",
+        label: "Name",
+        field: "name",
+        align: "left",
+        sortable: true,
+      },
+      {
+        name: "width",
+        label: "W",
+        field: "width",
+        align: "right",
+        sortable: true,
+        style: "width:75px",
+      },
+      {
+        name: "depth",
+        label: "D",
+        field: "depth",
+        align: "right",
+        sortable: true,
+        style: "width:75px",
+      },
+      {
+        name: "action",
+        label: "",
+        align: "center",
+        field: "",
+        sortable: false,
+        style: "width: 48px",
+      },
+    ];
+
     const showDuplicateShelfDialog = ref(false);
     const shelfToDuplicate = ref("");
     const duplicateCount = ref(1);
@@ -419,8 +526,8 @@ export default {
     const showBinDialog = ref(false);
     const binData = ref({
       name: "",
-      width: 0,
-      depth: 0,
+      width: null,
+      depth: null,
     });
 
     const selectedShelf = ref(null);
@@ -432,9 +539,21 @@ export default {
     const currentShelf = ref("");
 
     // For dragging bins
-    const draggingBin = ref(null); // { bin, shelfName }
+    const draggingBin = ref(null);
     const dragStart = ref({ x: 0, y: 0 });
     const binOffset = ref({ x: 0, y: 0 });
+
+    // --- Table filtering for Bin Manager ---
+    const filteredBins = computed(() => {
+      if (!binsFilter.value) return binStore.bins;
+      const f = binsFilter.value.trim().toLowerCase();
+      return binStore.bins.filter(
+        (bin) =>
+          (bin.name || "").toLowerCase().includes(f) ||
+          String(bin.width).includes(f) ||
+          String(bin.depth).includes(f)
+      );
+    });
 
     function getSvgCoords(event, shelfName) {
       const svg = svgRefs[shelfName];
@@ -525,10 +644,7 @@ export default {
       if (event.button !== 0) return; // Only left mouse
       draggingBin.value = { bin, shelfName };
 
-      // Mouse in SVG percent coordinates
       const coords = getSvgCoords(event, shelfName);
-
-      // Bin top-left in percent
       const shelfWidth = shuttleStore.getShelfWidth({ name: shelfName });
       const shelfDepth = shuttleStore.getShelfDepth({ name: shelfName });
       const binX = (bin.position.x / shelfWidth) * 100;
@@ -561,7 +677,6 @@ export default {
       const realX = (newX / 100) * shelfWidth;
       const realY = (newY / 100) * shelfDepth;
 
-      // Overlap test
       if (
         !isBinMovementOverlapping(
           bin,
@@ -587,7 +702,6 @@ export default {
       const bins = binStore.binShelves[shelfName] || [];
       return bins.some((bin) => {
         if (bin === currentBin) return false;
-        // Axis-aligned bounding box (AABB) overlap
         return !(
           x + w <= bin.position.x ||
           x >= bin.position.x + bin.width ||
@@ -598,7 +712,6 @@ export default {
     }
     /** -- End Drag Bin Handlers -- */
 
-    // Description dialog state
     const showBinDescriptionDialog = ref(false);
     const descriptionInput = ref("");
 
@@ -618,7 +731,7 @@ export default {
 
     const addNewBin = () => {
       binStore.addBin({ ...binData.value });
-      binData.value = { name: "", width: 0, depth: 0 };
+      binData.value = { name: "", width: null, depth: null };
     };
 
     const selectBinForShelf = (bin) => {
@@ -632,14 +745,12 @@ export default {
       showBinDialog.value = true;
     };
 
-    /** Helper for bin comparison by object reference */
     function isBinSelected(bin, shelfName) {
       const arr = selectedBinsPerShelf[shelfName];
       if (!arr) return false;
       return arr.includes(bin);
     }
 
-    // Multi-bin select support (SVG click)
     const selectBin = (shelfName, bin, event) => {
       selectedShelf.value = shelfName;
       if (isSelecting.value) return;
@@ -661,7 +772,6 @@ export default {
       }
     };
 
-    // Table selection sync: this gets called when you click checkboxes in the table.
     function onTableSelection(shelfName, { rows }) {
       selectedShelf.value = shelfName;
       selectedBinsPerShelf[shelfName] = rows;
@@ -694,7 +804,6 @@ export default {
       selectedBinsPerShelf[selectedShelf.value] = [];
     }
 
-    // Delete selected bins on keyboard Delete
     function removeSelectedBin() {
       if (
         selectedShelf.value &&
@@ -811,49 +920,39 @@ export default {
       shuttleStore,
       binStore,
       columns,
+      binTableColumns,
+      binsFilter,
+      filteredBins,
       shelfToDuplicate,
       duplicateCount,
       duplicateBins,
       duplicateDescriptions,
       showDuplicateShelfDialog,
-
-      // For shelf panels
       selectedShelf,
       selectedBinsPerShelf,
-
-      // SVG and selection
       svgRefs,
       isSelecting,
       selectRect,
       currentShelf,
       rowKey,
-
       onSvgMouseDown,
       selectBin,
       getBinFillColor,
       isBinSelected,
-
-      // Dialogs and multi-selection
       openBinDescriptionDialog,
       openBinDescriptionDialogForAll,
       setDescriptionForSelectedBins,
       showBinDescriptionDialog,
       descriptionInput,
-
       addNewBin,
       selectBinForShelf,
       showBinSelector,
-
       updateSelectedShuttle,
       onShuttleNameChange,
-
       removeSelectedBin,
-
       runDuplicateShelf,
       openDuplicateShelfDialog,
-
       onTableSelection,
-      // Drag bin handlers
       onBinMouseDown,
     };
   },
@@ -897,5 +996,48 @@ export default {
   display: flex;
   align-items: center;
   justify-content: space-between;
+}
+
+/* Bin Manager dialog enhancements */
+.bin-form {
+  border-radius: 8px;
+  background-color: #f6fafd !important;
+  box-shadow: 0 1px 8px #cadbe8cc;
+  min-height: 330px;
+}
+.bins-table thead th {
+  background: #eef4fb;
+  font-weight: 500;
+  font-size: 1rem;
+  border-bottom: 1.5px solid #d5e4f5;
+}
+.bins-table .q-td {
+  font-size: 1rem;
+  padding-top: 6px !important;
+  padding-bottom: 6px !important;
+}
+.bins-table {
+  background: #f7fafe;
+  border-radius: 9px;
+  box-shadow: 0 1px 4px #d8e5f8a8;
+}
+.q-toolbar-title {
+  font-size: 1.13rem;
+  font-weight: bold;
+  letter-spacing: 0.5px;
+}
+.q-table__bottom,
+.q-table__bottom-row {
+  border-top: none !important;
+}
+.q-table__top {
+  border-bottom: none !important;
+}
+.q-table .q-btn {
+  margin: 0;
+}
+.q-table th,
+.q-table td {
+  vertical-align: middle !important;
 }
 </style>
