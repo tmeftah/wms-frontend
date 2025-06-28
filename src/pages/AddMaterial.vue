@@ -23,7 +23,7 @@
           <!-- MATERIAL TAB -->
           <q-tab-panel name="materials" class="q-pa-none">
             <q-card-section>
-              <div class="row items-center q-mb-sm">
+              <div class="row items-center">
                 <q-btn
                   label="Add Material"
                   color="primary"
@@ -40,15 +40,7 @@
                   v-model="mFilters.name"
                   placeholder="Search…"
                   class="q-mr-xs"
-                  style="max-width: 250px"
                   prefix="🔎"
-                />
-                <q-btn
-                  flat
-                  dense
-                  icon="clear"
-                  @click="resetMaterialFilters"
-                  title="Reset filters"
                 />
               </div>
             </q-card-section>
@@ -75,8 +67,9 @@
                   </q-th>
                   <q-th
                     class="bg-primary text-white text-no-wrap"
-                    style="width: 65px"
-                  ></q-th>
+                    style="width: 10%"
+                    >Actions</q-th
+                  >
                 </q-tr>
               </template>
               <template v-slot:body="props">
@@ -230,9 +223,8 @@
                   filled
                   debounce="200"
                   v-model="pFilters.name"
-                  placeholder="Search property…"
+                  placeholder="Search…"
                   class="q-mr-xs"
-                  style="max-width: 250px"
                   prefix="🔎"
                 />
               </div>
@@ -253,13 +245,14 @@
                   <q-th
                     v-for="col in propertyColumns"
                     :key="col.name"
-                    class="bg-indigo-9 text-white text-no-wrap"
+                    class="bg-primary text-white text-no-wrap text-weight-bold"
                     >{{ col.label }}</q-th
                   >
                   <q-th
-                    class="bg-indigo-9 text-white text-no-wrap"
-                    style="width: 65px"
-                  ></q-th>
+                    class="bg-primary text-white text-no-wrap text-weight-bold"
+                    style="width: 10%"
+                    >Actions</q-th
+                  >
                 </q-tr>
               </template>
               <template v-slot:body="props">
@@ -287,8 +280,8 @@
                   </q-td>
                   <q-td key="qualification" :props="props">
                     <q-icon
-                      :name="props.row.qualification ? 'verified' : 'close'"
-                      :color="props.row.qualification ? 'positive' : 'grey-6'"
+                      :name="props.row.qualification ? 'check' : 'close'"
+                      :color="props.row.qualification ? 'accent' : 'grey-6'"
                     />
                   </q-td>
                   <q-td>
@@ -341,19 +334,15 @@
               autofocus
             />
             <div class="row q-gutter-sm">
-              <q-checkbox
-                v-model="propertyForm.serialNumber"
-                label="Serial Number Enabled"
-                dense
-              />
-              <q-checkbox
-                v-model="propertyForm.lotNumber"
-                label="Lot Number Enabled"
-                dense
-              />
-              <q-checkbox
+              <q-toggle v-model="propertyForm.lotNumber" label="Lot" dense />
+              <q-toggle
                 v-model="propertyForm.qualification"
-                label="Qualification Required"
+                label="Qualification"
+                dense
+              />
+              <q-toggle
+                v-model="propertyForm.serialNumber"
+                label="Serial Number"
                 dense
               />
             </div>
@@ -699,13 +688,13 @@ export default {
       },
       {
         name: "serialNumber",
-        label: "Serial #",
+        label: "Serial",
         field: "serialNumber",
         align: "center",
       },
       {
         name: "lotNumber",
-        label: "Lot #",
+        label: "Lot",
         field: "lotNumber",
         align: "center",
       },
