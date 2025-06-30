@@ -171,7 +171,11 @@
                     :ref="(el) => (svgRefs[shelf.name] = el)"
                     viewBox="0 0 100 100"
                     preserveAspectRatio="none"
-                    style="touch-action: none; user-select: none"
+                    style="
+                      touch-action: none;
+                      user-select: none;
+                      cursor: crosshair;
+                    "
                     class="svg-shelf"
                     @mousedown="onSvgMouseDown(shelf.name, $event)"
                   >
@@ -587,6 +591,7 @@ export default {
     }
 
     function onSvgMouseDown(shelfName, event) {
+      console.log(shelfName);
       if (event.button !== 0) return;
       currentShelf.value = shelfName;
       isSelecting.value = true;
@@ -829,6 +834,11 @@ export default {
     }
 
     function handleKeyDown(event) {
+      console.log(
+        "->remove",
+        selectedShelf.value,
+        selectedBinsPerShelf[selectedShelf.value]?.length
+      );
       if (
         event.key === "Delete" &&
         selectedShelf.value &&
@@ -993,6 +1003,8 @@ export default {
   width: 100%;
   height: 250px;
   min-width: 100%;
+
+  border: 5px #d3d3d3 dashed;
   background-color: transparent;
   user-select: none;
   display: block;
