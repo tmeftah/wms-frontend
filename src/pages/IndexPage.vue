@@ -216,17 +216,30 @@
                         style="pointer-events: auto; cursor: pointer"
                       />
                     </g>
-                    <rect
-                      v-if="isSelecting && currentShelf === shelf.name"
-                      :x="Math.min(selectRect.x1, selectRect.x2)"
-                      :y="Math.min(selectRect.y1, selectRect.y2)"
-                      :width="Math.abs(selectRect.x2 - selectRect.x1)"
-                      :height="Math.abs(selectRect.y2 - selectRect.y1)"
-                      fill="rgba(33,150,243,0.2)"
-                      stroke="#2196F3"
-                      stroke-width="1"
-                      pointer-events="none"
-                    />
+                    <template v-if="isSelecting && currentShelf === shelf.name">
+                      <rect
+                        :x="Math.min(selectRect.x1, selectRect.x2)"
+                        :y="Math.min(selectRect.y1, selectRect.y2)"
+                        :width="Math.abs(selectRect.x2 - selectRect.x1)"
+                        :height="Math.abs(selectRect.y2 - selectRect.y1)"
+                        fill="rgba(33,150,243,0.2)"
+                        stroke="#2196F3"
+                        stroke-width="0.5"
+                        pointer-events="none"
+                      />
+                      <text
+                        :x="(selectRect.x1 + selectRect.x2) / 2"
+                        :y="(selectRect.y1 + selectRect.y2) / 2"
+                        text-anchor="middle"
+                        dominant-baseline="middle"
+                        fill="#2196F3"
+                        font-size="9"
+                        pointer-events="none"
+                        class="selection-text"
+                      >
+                        Selection
+                      </text>
+                    </template>
                   </svg>
                 </div>
               </div>
@@ -612,6 +625,7 @@ export default {
     function onSvgMouseMove(event, shelfName, originEvent) {
       if (!isSelecting.value) return;
       const { x, y } = getSvgCoords(event, shelfName);
+
       selectRect.value.x2 = x;
       selectRect.value.y2 = y;
       const [xMin, xMax] = [
@@ -622,6 +636,7 @@ export default {
         Math.min(selectRect.value.y1, y),
         Math.max(selectRect.value.y1, y),
       ];
+
       const shelfBins = shuttleStore.binShelves[shelfName] || [];
       const binsInRect = shelfBins.filter((bin) => {
         const binX =
@@ -634,6 +649,7 @@ export default {
           (bin.width / shuttleStore.getShelfWidth({ name: shelfName })) * 100;
         const binH =
           (bin.depth / shuttleStore.getShelfDepth({ name: shelfName })) * 100;
+
         return !(
           binX + binW < xMin ||
           binX > xMax ||
@@ -1056,5 +1072,10 @@ export default {
 .q-table th,
 .q-table td {
   vertical-align: middle !important;
+}
+
+.selection-text {
+  font-family: sans-serif; /* Or any preferred font */
+  opacity: 0.8; /* Make it slightly transparent if desired */
 }
 </style>
