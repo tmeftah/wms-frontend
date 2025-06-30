@@ -82,9 +82,11 @@
                   label="Shuttle Name"
                   filled
                   class="q-mb-md"
-                  @blur="onShuttleNameChange(shuttle)"
+                  @blur="onShuttleUpdate(shuttle)"
+                  :readonly="!shuttleStore.isShuttleEmpty(shuttle.name)"
                   dense
                 />
+
                 <q-input
                   v-model="shuttle.width"
                   label="Width"
@@ -92,6 +94,8 @@
                   type="number"
                   class="q-mb-md"
                   dense
+                  @change="onShuttleUpdate(shuttle)"
+                  :readonly="!shuttleStore.isShuttleEmpty(shuttle.name)"
                 />
                 <q-input
                   v-model="shuttle.depth"
@@ -100,6 +104,8 @@
                   type="number"
                   class="q-mb-md"
                   dense
+                  @change="onShuttleUpdate(shuttle)"
+                  :readonly="!shuttleStore.isShuttleEmpty(shuttle.name)"
                 />
                 <q-btn
                   @click="shuttleStore.removeShuttle(shuttle.name)"
@@ -170,7 +176,9 @@
                     @mousedown="onSvgMouseDown(shelf.name, $event)"
                   >
                     <g
-                      v-for="(bin, index) in binStore.binShelves[shelf.name]"
+                      v-for="(bin, index) in shuttleStore.binShelves[
+                        shelf.name
+                      ]"
                       :key="bin.name + '-' + index"
                     >
                       <rect
@@ -224,7 +232,7 @@
               <q-card-section>
                 <div class="text-h6 q-mb-md">Bins on Shelf</div>
                 <q-table
-                  :rows="binStore.binShelves[shelf.name] || []"
+                  :rows="shuttleStore.binShelves[shelf.name] || []"
                   :columns="columns"
                   :row-key="rowKey"
                   :rows-per-page-options="[0]"
@@ -610,7 +618,7 @@ export default {
         Math.min(selectRect.value.y1, y),
         Math.max(selectRect.value.y1, y),
       ];
-      const shelfBins = binStore.binShelves[shelfName] || [];
+      const shelfBins = shuttleStore.binShelves[shelfName] || [];
       const binsInRect = shelfBins.filter((bin) => {
         const binX =
           (bin.position.x / shuttleStore.getShelfWidth({ name: shelfName })) *
@@ -706,7 +714,7 @@ export default {
     }
 
     function isBinMovementOverlapping(currentBin, shelfName, x, y, w, h) {
-      const bins = binStore.binShelves[shelfName] || [];
+      const bins = shuttleStore.binShelves[shelfName] || [];
       return bins.some((bin) => {
         if (bin === currentBin) return false;
         return !(
@@ -728,12 +736,8 @@ export default {
       selectedShuttle.value = parts.length > 1 ? parts[0] : newSelection;
     };
 
-    const onShuttleNameChange = (shuttle) => {
-      if (shuttle.name !== shuttle.editName) {
-        shuttleStore.updateShuttleName(shuttle.name, shuttle.editName);
-        shuttle.name = shuttle.editName;
-        shuttle.title = `${shuttle.editName} Setup`;
-      }
+    const onShuttleUpdate = (shuttle) => {
+      shuttleStore.updateShuttle(shuttle);
     };
 
     const addNewBin = () => {
@@ -743,7 +747,7 @@ export default {
 
     const selectBinForShelf = (bin) => {
       if (selectedShuttle.value) {
-        binStore.addBinToShelf(selectedShuttle.value, bin);
+        shuttleStore.addBinToShelf(selectedShuttle.value, bin);
       }
     };
 
@@ -802,7 +806,7 @@ export default {
         !selectedBinsPerShelf[selectedShelf.value]?.length
       )
         return;
-      binStore.setDescriptionForBins(
+      shuttleStore.setDescriptionForBins(
         selectedShelf.value,
         selectedBinsPerShelf[selectedShelf.value],
         descriptionInput.value
@@ -818,7 +822,7 @@ export default {
       ) {
         const toRemove = selectedBinsPerShelf[selectedShelf.value];
         toRemove.forEach((bin) => {
-          binStore.removeBinFromShelf(selectedShelf.value, bin);
+          shuttleStore.removeBinFromShelf(selectedShelf.value, bin);
         });
         selectedBinsPerShelf[selectedShelf.value] = [];
       }
@@ -852,7 +856,7 @@ export default {
     }
 
     function openBinDescriptionDialogForAll(shelfName) {
-      const shelfBins = binStore.binShelves[shelfName] || [];
+      const shelfBins = shuttleStore.binShelves[shelfName] || [];
       if (!shelfBins.length) return;
       selectedShelf.value = shelfName;
       selectedBinsPerShelf[shelfName] = [...shelfBins];
@@ -886,8 +890,8 @@ export default {
           selectedShuttle.value
         );
 
-        if (duplicateBins.value && binStore.binShelves[origShelfName]) {
-          const binsForNewShelf = binStore.binShelves[origShelfName].map(
+        if (duplicateBins.value && shuttleStore.binShelves[origShelfName]) {
+          const binsForNewShelf = shuttleStore.binShelves[origShelfName].map(
             (bin) => {
               const newBin = { ...JSON.parse(JSON.stringify(bin)) };
               if (!duplicateDescriptions.value) {
@@ -896,13 +900,13 @@ export default {
               return newBin;
             }
           );
-          binStore.binShelves[newShelf] = binsForNewShelf;
-          binStore.$patch({ binShelves: { ...binStore.binShelves } });
-          binStore.saveState();
+          shuttleStore.binShelves[newShelf] = binsForNewShelf;
+          shuttleStore.$patch({ binShelves: { ...shuttleStore.binShelves } });
+          shuttleStore.saveState();
         } else {
-          binStore.binShelves[newShelf] = [];
-          binStore.$patch({ binShelves: { ...binStore.binShelves } });
-          binStore.saveState();
+          shuttleStore.binShelves[newShelf] = [];
+          shuttleStore.$patch({ binShelves: { ...shuttleStore.binShelves } });
+          shuttleStore.saveState();
         }
       }
       $q.notify({
@@ -955,7 +959,7 @@ export default {
       selectBinForShelf,
       showBinSelector,
       updateSelectedShuttle,
-      onShuttleNameChange,
+      onShuttleUpdate,
       removeSelectedBin,
       runDuplicateShelf,
       openDuplicateShelfDialog,
