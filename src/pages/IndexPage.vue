@@ -591,7 +591,6 @@ export default {
     }
 
     function onSvgMouseDown(shelfName, event) {
-      console.log(shelfName);
       if (event.button !== 0) return;
       currentShelf.value = shelfName;
       isSelecting.value = true;
@@ -834,11 +833,6 @@ export default {
     }
 
     function handleKeyDown(event) {
-      console.log(
-        "->remove",
-        selectedShelf.value,
-        selectedBinsPerShelf[selectedShelf.value]?.length
-      );
       if (
         event.key === "Delete" &&
         selectedShelf.value &&
