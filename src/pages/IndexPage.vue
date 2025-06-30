@@ -854,7 +854,34 @@ export default {
         selectedShelf.value &&
         selectedBinsPerShelf[selectedShelf.value]?.length
       ) {
-        removeSelectedBin();
+        $q.dialog({
+          title: "Confirm Deletion",
+          message:
+            "Are you sure you want to delete the selected bin(s)? This action cannot be undone.",
+
+          cancel: true, // Show a cancel button
+          persistent: true, // Prevent closing by clicking outside
+
+          focus: "cancel",
+        })
+          .onOk(() => {
+            // User clicked 'OK' or 'Yes'
+            removeSelectedBin();
+          })
+          .onCancel(() => {
+            // User clicked 'Cancel' or outside dialog
+            $q.notify({
+              message: "Deletion cancelled.",
+              color: "info",
+              icon: "info",
+              position: "bottom",
+            });
+          })
+          .onDismiss(() => {
+            // Dialog was dismissed (e.g., by hitting escape or clicking outside if not persistent)
+            // This is often good for cleanup or logging, but onCancel usually covers user rejection.
+            console.log("Dialog dismissed");
+          });
       }
     }
 
